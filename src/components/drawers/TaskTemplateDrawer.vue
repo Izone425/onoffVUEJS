@@ -157,6 +157,12 @@
         :taskName="formData.taskName"
       />
 
+      <!-- Checklist Configuration - Only for Checklist -->
+      <ChecklistConfig
+        v-if="formData.taskType === 'checklist'"
+        v-model:checklistItems="checklistItems"
+      />
+
       <!-- Active Status - Always Last -->
       <div class="form-section">
         <div class="field-group">
@@ -193,6 +199,7 @@ import DocumentUploadConfig from './config/DocumentUploadConfig.vue'
 import SystemAccessConfig from './config/SystemAccessConfig.vue'
 import AssetConfig from './config/AssetConfig.vue'
 import QuestionnaireConfig from './config/QuestionnaireConfig.vue'
+import ChecklistConfig from './config/ChecklistConfig.vue'
 import { taskTemplates } from '../../data/mockData'
 
 const props = defineProps({
@@ -227,6 +234,7 @@ const documentRequirements = ref({})
 const systemAccesses = ref([])
 const assetItems = ref([])
 const questionnaireQuestions = ref([])
+const checklistItems = ref([])
 
 const taskTypeOptions = [
   { label: 'General Task', value: 'general' },
@@ -293,7 +301,8 @@ const handleSave = () => {
       documentRequirements: documentRequirements.value,
       systemAccesses: systemAccesses.value,
       assetItems: assetItems.value,
-      questionnaireQuestions: questionnaireQuestions.value
+      questionnaireQuestions: questionnaireQuestions.value,
+      checklistItems: checklistItems.value
     })
     saving.value = false
     handleClose()
@@ -318,6 +327,7 @@ const resetForm = () => {
   systemAccesses.value = []
   assetItems.value = []
   questionnaireQuestions.value = []
+  checklistItems.value = []
 }
 
 watch(() => props.editingTemplate, (template) => {
