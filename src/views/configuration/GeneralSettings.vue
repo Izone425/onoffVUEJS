@@ -54,7 +54,19 @@
                   optionValue="value"
                   placeholder="Select frequency"
                   class="w-full"
+                  @change="onReminderCadenceChange"
                 />
+                <div v-if="settings.reminderCadence === 'custom'" class="custom-days-input">
+                  <InputNumber
+                    v-model="settings.customReminderDays"
+                    :min="1"
+                    :max="365"
+                    placeholder="Enter number of days"
+                    suffix=" days"
+                    class="w-full"
+                  />
+                  <small class="form-help">Enter a custom number of days (1-365)</small>
+                </div>
               </div>
 
               <div class="form-field">
@@ -135,14 +147,25 @@ import { generalSettings, appraisalTemplates } from '../../data/mockData'
 
 const toast = useToast()
 const saving = ref(false)
-const settings = ref({ ...generalSettings })
+const settings = ref({
+  ...generalSettings,
+  customReminderDays: 5 // Default custom value
+})
 
 const reminderOptions = [
   { label: 'Never', value: 'never' },
   { label: 'Daily', value: 'daily' },
   { label: 'Every 3 days', value: 'every_3_days' },
-  { label: 'Weekly', value: 'weekly' }
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Custom (Every X days)', value: 'custom' }
 ]
+
+const onReminderCadenceChange = (event) => {
+  // If custom is selected, ensure customReminderDays has a default value
+  if (event.value === 'custom' && !settings.value.customReminderDays) {
+    settings.value.customReminderDays = 5
+  }
+}
 
 const timezones = [
   { label: 'Asia/Kuala Lumpur (GMT+8)', value: 'Asia/Kuala_Lumpur' },
@@ -158,14 +181,31 @@ const locales = [
 ]
 
 const saveSettings = async () => {
+  // Validate custom reminder days if custom is selected
+  if (settings.value.reminderCadence === 'custom') {
+    if (!settings.value.customReminderDays || settings.value.customReminderDays < 1) {
+      toast.add({
+        severity: 'error',
+        summary: 'Validation Error',
+        detail: 'Please enter a valid number of days (1-365)',
+        life: 3000
+      })
+      return
+    }
+  }
+
   saving.value = true
   // Simulate API call
   setTimeout(() => {
     saving.value = false
+    const reminderDetail = settings.value.reminderCadence === 'custom'
+      ? `Every ${settings.value.customReminderDays} days`
+      : reminderOptions.find(opt => opt.value === settings.value.reminderCadence)?.label
+
     toast.add({
       severity: 'success',
       summary: 'Settings Saved',
-      detail: 'General settings have been updated successfully',
+      detail: `Reminder cadence set to: ${reminderDetail}`,
       life: 3000
     })
   }, 1000)
@@ -254,6 +294,26 @@ const resetSettings = () => {
 .toggle-label {
   font-size: 14px;
   color: var(--color-gray-700);
+}
+
+.custom-days-input {
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-2);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .form-actions {
