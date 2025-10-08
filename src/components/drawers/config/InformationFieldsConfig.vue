@@ -171,39 +171,35 @@ const informationFieldCategories = {
     title: 'Personal Information',
     fields: [
       { id: 'full-name', label: 'Full Name' },
-      { id: 'ic-number', label: 'IC Number' },
-      { id: 'passport-number', label: 'Passport Number' },
+      { id: 'email-address', label: 'Email Address' },
+      { id: 'phone-number', label: 'Phone Number' },
       { id: 'date-of-birth', label: 'Date of Birth' },
-      { id: 'gender', label: 'Gender' },
+      { id: 'nationality', label: 'Nationality' },
       { id: 'marital-status', label: 'Marital Status' }
     ]
   },
   contact: {
     title: 'Contact Information',
     fields: [
-      { id: 'email', label: 'Email Address' },
-      { id: 'phone', label: 'Phone Number' },
+      { id: 'home-address', label: 'Home Address' },
       { id: 'emergency-contact', label: 'Emergency Contact' },
-      { id: 'current-address', label: 'Current Address' },
-      { id: 'permanent-address', label: 'Permanent Address' }
+      { id: 'emergency-contact-phone', label: 'Emergency Contact Phone' }
     ]
   },
-  employment: {
-    title: 'Employment Information',
+  financial: {
+    title: 'Financial Information',
     fields: [
-      { id: 'employee-id', label: 'Employee ID' },
-      { id: 'department', label: 'Department' },
-      { id: 'designation', label: 'Designation' },
-      { id: 'start-date', label: 'Start Date' },
-      { id: 'reporting-to', label: 'Reporting To' }
-    ]
-  },
-  banking: {
-    title: 'Banking Information',
-    fields: [
+      { id: 'bank-account-number', label: 'Bank Account Number' },
       { id: 'bank-name', label: 'Bank Name' },
-      { id: 'account-number', label: 'Account Number' },
-      { id: 'account-holder', label: 'Account Holder Name' }
+      { id: 'tax-id-number', label: 'Tax ID Number' }
+    ]
+  },
+  payroll: {
+    title: 'Payroll Information',
+    fields: [
+      { id: 'tax-identification-number', label: 'Tax Identification Number' },
+      { id: 'epf-number', label: 'EPF Number' },
+      { id: 'socso-number', label: 'Socso Number' }
     ]
   }
 }

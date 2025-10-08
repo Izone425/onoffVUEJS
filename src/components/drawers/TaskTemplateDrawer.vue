@@ -149,6 +149,19 @@
         v-if="formData.taskType === 'asset'"
         v-model:assetItems="assetItems"
       />
+
+      <!-- Active Status - Always Last -->
+      <div class="form-section">
+        <div class="field-group">
+          <div class="active-status-toggle">
+            <div class="toggle-content">
+              <label class="form-label">Active Status</label>
+              <p class="toggle-description">Enable this template for use in onboarding/offboarding workflows</p>
+            </div>
+            <InputSwitch v-model="formData.isActive" />
+          </div>
+        </div>
+      </div>
     </div>
 
     <template #footer>
@@ -167,6 +180,7 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Dropdown from 'primevue/dropdown'
+import InputSwitch from 'primevue/inputswitch'
 import InformationFieldsConfig from './config/InformationFieldsConfig.vue'
 import DocumentUploadConfig from './config/DocumentUploadConfig.vue'
 import SystemAccessConfig from './config/SystemAccessConfig.vue'
@@ -193,7 +207,8 @@ const formData = ref({
   taskType: '',
   category: '',
   description: '',
-  url: ''
+  url: '',
+  isActive: true
 })
 
 const selectedInformationFields = ref([])
@@ -281,7 +296,8 @@ const resetForm = () => {
     taskType: '',
     category: '',
     description: '',
-    url: ''
+    url: '',
+    isActive: true
   }
   copyFromTemplateId.value = null
   selectedInformationFields.value = []
@@ -300,7 +316,8 @@ watch(() => props.editingTemplate, (template) => {
       taskType: template.type,
       category: template.indicator,
       description: template.description || '',
-      url: template.url || ''
+      url: template.url || '',
+      isActive: template.isActive !== undefined ? template.isActive : true
     }
   } else {
     // Reset form when creating new template
@@ -457,6 +474,26 @@ watch(() => props.visible, (isVisible) => {
   gap: var(--spacing-2);
   padding: var(--spacing-3);
   border-top: 1px solid var(--color-divider);
+}
+
+.active-status-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3);
+  background-color: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+}
+
+.toggle-content {
+  flex: 1;
+}
+
+.toggle-description {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin: 4px 0 0 0;
 }
 
 .w-full {

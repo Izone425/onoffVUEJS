@@ -149,16 +149,13 @@ const newDocumentName = ref('')
 const customDocuments = ref([])
 
 const predefinedDocuments = [
-  { id: 'resume', label: 'Resume/CV' },
-  { id: 'ic-copy', label: 'IC Copy' },
-  { id: 'passport-copy', label: 'Passport Copy' },
-  { id: 'certificates', label: 'Educational Certificates' },
-  { id: 'bank-statement', label: 'Bank Statement' },
-  { id: 'employment-letter', label: 'Employment Letter' },
-  { id: 'reference-letter', label: 'Reference Letter' },
-  { id: 'medical-report', label: 'Medical Report' },
-  { id: 'photo', label: 'Passport Photo' },
-  { id: 'tax-form', label: 'Tax Form' }
+  { id: 'ic', label: 'IC (Identity Card)' },
+  { id: 'passport', label: 'Passport' },
+  { id: 'work-permit', label: 'Work Permit' },
+  { id: 'medical-checkup', label: 'Medical Checkup Report' },
+  { id: 'driving-license', label: 'Driving License' },
+  { id: 'ea-form', label: 'EA Form' },
+  { id: 'tp3', label: 'TP3' }
 ]
 
 const allDocuments = computed(() => {
