@@ -155,7 +155,6 @@ const settings = ref({
 const reminderOptions = [
   { label: 'Never', value: 'never' },
   { label: 'Daily', value: 'daily' },
-  { label: 'Every 3 days', value: 'every_3_days' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Custom (Every X days)', value: 'custom' }
 ]

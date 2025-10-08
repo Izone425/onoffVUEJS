@@ -1,7 +1,7 @@
 <template>
   <header class="topbar" :class="{ 'mobile': mobile }">
     <div class="topbar-left">
-      <h1 class="page-title">{{ pageTitle }}</h1>
+      <!-- Page title removed -->
     </div>
 
     <div class="topbar-right">
