@@ -150,6 +150,13 @@
         v-model:assetItems="assetItems"
       />
 
+      <!-- Questionnaire Configuration - Only for Questionnaire -->
+      <QuestionnaireConfig
+        v-if="formData.taskType === 'questionnaire'"
+        v-model:questions="questionnaireQuestions"
+        :taskName="formData.taskName"
+      />
+
       <!-- Active Status - Always Last -->
       <div class="form-section">
         <div class="field-group">
@@ -185,6 +192,7 @@ import InformationFieldsConfig from './config/InformationFieldsConfig.vue'
 import DocumentUploadConfig from './config/DocumentUploadConfig.vue'
 import SystemAccessConfig from './config/SystemAccessConfig.vue'
 import AssetConfig from './config/AssetConfig.vue'
+import QuestionnaireConfig from './config/QuestionnaireConfig.vue'
 import { taskTemplates } from '../../data/mockData'
 
 const props = defineProps({
@@ -218,6 +226,7 @@ const selectedDocuments = ref([])
 const documentRequirements = ref({})
 const systemAccesses = ref([])
 const assetItems = ref([])
+const questionnaireQuestions = ref([])
 
 const taskTypeOptions = [
   { label: 'General Task', value: 'general' },
@@ -283,7 +292,8 @@ const handleSave = () => {
       selectedDocuments: selectedDocuments.value,
       documentRequirements: documentRequirements.value,
       systemAccesses: systemAccesses.value,
-      assetItems: assetItems.value
+      assetItems: assetItems.value,
+      questionnaireQuestions: questionnaireQuestions.value
     })
     saving.value = false
     handleClose()
@@ -307,6 +317,7 @@ const resetForm = () => {
   documentRequirements.value = {}
   systemAccesses.value = []
   assetItems.value = []
+  questionnaireQuestions.value = []
 }
 
 watch(() => props.editingTemplate, (template) => {
