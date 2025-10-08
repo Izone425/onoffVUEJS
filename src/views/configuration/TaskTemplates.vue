@@ -68,39 +68,45 @@
         <!-- List View -->
         <div v-if="viewMode === 'list'" class="table-container">
           <DataTable :value="filteredTemplates" responsiveLayout="scroll" stripedRows scrollable scrollHeight="flex">
-            <Column field="name" header="Name" style="min-width: 200px">
+            <Column field="name" header="Template Name" style="min-width: 350px">
               <template #body="{ data }">
-                <div class="template-name">
-                  <span class="pi pi-file"></span>
-                  <span>{{ data.name }}</span>
+                <div class="template-name-cell">
+                  <span class="pi pi-file template-icon"></span>
+                  <div class="template-info">
+                    <div class="template-title">{{ data.name }}</div>
+                    <div class="template-description">{{ data.description }}</div>
+                  </div>
                 </div>
               </template>
             </Column>
-            <Column field="type" header="Type" style="min-width: 180px">
+            <Column field="type" header="Type" style="min-width: 150px">
               <template #body="{ data }">
                 {{ getTypeName(data.type) }}
               </template>
             </Column>
-            <Column field="indicator" header="Indicator" style="min-width: 120px">
+            <Column field="indicator" header="Category" style="min-width: 130px">
               <template #body="{ data }">
-                <StatusChip :status="data.indicator === 'onboarding' ? 'in_progress' : 'pending'" :label="data.indicator" />
-              </template>
-            </Column>
-            <Column field="ownerRole" header="Owner Role" style="min-width: 140px"></Column>
-            <Column field="sla" header="SLA (days)" style="min-width: 100px"></Column>
-            <Column field="mandatory" header="Mandatory" style="min-width: 100px">
-              <template #body="{ data }">
-                <span :class="data.mandatory ? 'text-success' : 'text-muted'">
-                  {{ data.mandatory ? 'Yes' : 'No' }}
+                <span :class="['category-badge', data.indicator]">
+                  {{ data.indicator }}
                 </span>
               </template>
             </Column>
-            <Column header="Actions" style="min-width: 150px">
+            <Column field="updatedAt" header="Last Updated" style="min-width: 130px">
+              <template #body="{ data }">
+                {{ formatDate(data.updatedAt) }}
+              </template>
+            </Column>
+            <Column field="status" header="Status" style="min-width: 100px">
               <template #body>
+                <span class="status-badge active">Active</span>
+              </template>
+            </Column>
+            <Column header="Actions" style="min-width: 130px; text-align: right">
+              <template #body="{ data }">
                 <div class="action-buttons">
-                  <Button icon="pi pi-pencil" size="small" text rounded />
-                  <Button icon="pi pi-copy" size="small" text rounded />
-                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" />
+                  <Button icon="pi pi-pencil" size="small" text rounded @click="openDrawer(data)" title="Edit" />
+                  <Button icon="pi pi-copy" size="small" text rounded title="Duplicate" />
+                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" title="Delete" />
                 </div>
               </template>
             </Column>
@@ -212,6 +218,12 @@ const filteredTemplates = computed(() => {
 const getTypeName = (type) => {
   const taskType = taskTypes.find(t => t.value === type)
   return taskType ? taskType.label : type
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 const openDrawer = (template = null) => {
@@ -351,16 +363,78 @@ const handleSaveTemplate = (templateData) => {
   font-weight: 500;
 }
 
-.template-name {
+.template-name-cell {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-2);
-  font-weight: 500;
+}
+
+.template-icon {
+  flex-shrink: 0;
+  color: var(--color-gray-500);
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.template-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.template-title {
+  font-weight: 600;
+  color: var(--color-gray-900);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.template-description {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  line-height: 1.4;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.category-badge.onboarding {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.category-badge.offboarding {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
 }
 
 .action-buttons {
   display: flex;
   gap: var(--spacing-1);
+  justify-content: flex-end;
 }
 
 .text-success {
