@@ -53,9 +53,16 @@
               title="Card View"
             />
           </div>
-          <Button label="Create Template" icon="pi pi-plus" @click="createTemplate" />
+          <Button label="Create Template" icon="pi pi-plus" @click="openDrawer(null)" />
         </div>
       </div>
+
+      <!-- Task Template Drawer -->
+      <TaskTemplateDrawer
+        v-model:visible="drawerVisible"
+        :editingTemplate="editingTemplate"
+        @save="handleSaveTemplate"
+      />
 
       <div class="content-card">
         <!-- List View -->
@@ -154,18 +161,23 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import StatusChip from '../../components/ui/StatusChip.vue'
+import TaskTemplateDrawer from '../../components/drawers/TaskTemplateDrawer.vue'
 import { taskTemplates, taskTypes } from '../../data/mockData'
 
+const toast = useToast()
 const searchQuery = ref('')
 const selectedType = ref(null)
 const selectedIndicator = ref(null)
 const viewMode = ref('list') // 'list' or 'card'
+const drawerVisible = ref(false)
+const editingTemplate = ref(null)
 
 const indicators = [
   { label: 'Onboarding', value: 'onboarding' },
@@ -202,8 +214,21 @@ const getTypeName = (type) => {
   return taskType ? taskType.label : type
 }
 
-const createTemplate = () => {
-  console.log('Create new template')
+const openDrawer = (template = null) => {
+  // Explicitly set to null for create, or to the template object for edit
+  editingTemplate.value = template === null ? null : template
+  drawerVisible.value = true
+}
+
+const handleSaveTemplate = (templateData) => {
+  // Handle save logic here
+  toast.add({
+    severity: 'success',
+    summary: 'Template Saved',
+    detail: editingTemplate.value ? 'Template updated successfully' : 'Template created successfully',
+    life: 3000
+  })
+  console.log('Template data:', templateData)
 }
 </script>
 
