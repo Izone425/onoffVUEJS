@@ -175,18 +175,18 @@ const vClickOutside = {
 
 <style scoped>
 .topbar {
-  height: 64px;
+  height: 52px;
   background-color: var(--color-bg);
   border-bottom: 1px solid var(--color-divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--spacing-4);
+  padding: 0 var(--spacing-3);
   position: relative;
 }
 
 .topbar.mobile {
-  height: 56px;
+  height: 48px;
   padding: 0 var(--spacing-3);
 }
 
@@ -195,7 +195,7 @@ const vClickOutside = {
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-gray-900);
   margin: 0;
@@ -208,8 +208,8 @@ const vClickOutside = {
 }
 
 .topbar-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: none;
   background-color: transparent;
   border-radius: var(--radius-md);
@@ -227,7 +227,7 @@ const vClickOutside = {
 }
 
 .topbar-btn .pi {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .notification-btn .badge {
@@ -253,7 +253,7 @@ const vClickOutside = {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: 6px 12px 6px 6px;
+  padding: 4px 10px 4px 4px;
   border: 1px solid var(--color-divider);
   background-color: transparent;
   border-radius: var(--radius-md);
@@ -267,8 +267,8 @@ const vClickOutside = {
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #155EEF, #0B4EDD);
   display: flex;
@@ -283,12 +283,12 @@ const vClickOutside = {
 
 .user-initials {
   color: white;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .user-avatar.large .user-initials {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .user-info {
@@ -298,14 +298,14 @@ const vClickOutside = {
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-gray-900);
   line-height: 1.2;
 }
 
 .user-role {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-gray-500);
   line-height: 1.2;
 }

@@ -137,7 +137,7 @@ const isActive = (path) => {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 260px;
+  width: 220px;
   background-color: var(--color-bg);
   border-right: 1px solid var(--color-divider);
   display: flex;
@@ -147,11 +147,11 @@ const isActive = (path) => {
 }
 
 .sidebar.collapsed {
-  width: 80px;
+  width: 64px;
 }
 
 .sidebar-header {
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
   border-bottom: 1px solid var(--color-divider);
 }
 
@@ -162,8 +162,8 @@ const isActive = (path) => {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: linear-gradient(135deg, #155EEF, #0B4EDD);
   border-radius: var(--radius-md);
   display: flex;
@@ -174,7 +174,7 @@ const isActive = (path) => {
 
 .logo-icon .pi {
   color: white;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .logo-text {
@@ -183,14 +183,14 @@ const isActive = (path) => {
 }
 
 .logo-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-gray-900);
   line-height: 1.2;
 }
 
 .logo-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-gray-500);
   line-height: 1.2;
 }
@@ -202,10 +202,10 @@ const isActive = (path) => {
 
 .search-input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
+  padding: 6px 10px 6px 30px;
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 12px;
   background-color: var(--color-surface);
   transition: border-color 0.2s;
 }
@@ -217,11 +217,11 @@ const isActive = (path) => {
 
 .search-icon {
   position: absolute;
-  left: calc(var(--spacing-3) + 12px);
+  left: calc(var(--spacing-3) + 10px);
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-gray-500);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .sidebar-nav {
@@ -236,7 +236,7 @@ const isActive = (path) => {
 
 .nav-section-title {
   padding: var(--spacing-1) var(--spacing-3);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--color-gray-500);
   text-transform: uppercase;
@@ -254,7 +254,7 @@ const isActive = (path) => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: var(--radius-md);
   color: var(--color-gray-700);
   text-decoration: none;
@@ -273,14 +273,14 @@ const isActive = (path) => {
 }
 
 .nav-icon {
-  font-size: 18px;
+  font-size: 16px;
   flex-shrink: 0;
-  width: 20px;
+  width: 18px;
   text-align: center;
 }
 
 .nav-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;

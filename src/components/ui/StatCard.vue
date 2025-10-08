@@ -47,19 +47,19 @@ const changeClass = computed(() => {
 
 <style scoped>
 .stat-card {
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  min-height: 140px;
+  min-height: 100px;
   box-shadow: var(--shadow-md);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -68,21 +68,21 @@ const changeClass = computed(() => {
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 12px;
   opacity: 0.9;
-  margin-bottom: var(--spacing-1);
+  margin-bottom: 4px;
   font-weight: 500;
 }
 
 .stat-value {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.2;
-  margin-bottom: var(--spacing-1);
+  margin-bottom: 4px;
 }
 
 .stat-change {
-  font-size: 13px;
+  font-size: 11px;
   opacity: 0.9;
 }
 
@@ -95,8 +95,8 @@ const changeClass = computed(() => {
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-md);
   display: flex;
@@ -106,7 +106,7 @@ const changeClass = computed(() => {
 }
 
 .stat-icon .pi {
-  font-size: 28px;
+  font-size: 22px;
   opacity: 0.9;
 }
 </style>

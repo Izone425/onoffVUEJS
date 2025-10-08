@@ -9,24 +9,26 @@
       </div>
 
       <div class="content-card">
-        <DataTable :value="preHires" responsiveLayout="scroll" stripedRows>
-          <Column field="name" header="Candidate Name" style="min-width: 180px">
+        <DataTable :value="preHires" responsiveLayout="scroll" stripedRows class="compact-table">
+          <Column field="name" header="Candidate" style="width: 200px">
             <template #body="{ data }">
               <div class="candidate-name">
                 <div class="candidate-avatar">{{ getInitials(data.name) }}</div>
-                <span>{{ data.name }}</span>
+                <div class="candidate-info">
+                  <div class="candidate-name-text">{{ data.name }}</div>
+                  <div class="candidate-meta">{{ data.position }}</div>
+                </div>
               </div>
             </template>
           </Column>
-          <Column field="position" header="Position" style="min-width: 180px"></Column>
-          <Column field="department" header="Department" style="min-width: 130px"></Column>
-          <Column field="startDate" header="Start Date" style="min-width: 130px"></Column>
-          <Column field="emailStatus" header="Email Status" style="min-width: 160px">
+          <Column field="department" header="Dept" style="width: 100px"></Column>
+          <Column field="startDate" header="Start Date" style="width: 110px"></Column>
+          <Column field="emailStatus" header="Status" style="width: 120px">
             <template #body="{ data }">
               <StatusChip :status="data.emailStatus" />
             </template>
           </Column>
-          <Column header="Workflow" style="min-width: 200px">
+          <Column header="Workflow" style="width: 220px">
             <template #body="{ data }">
               <Dropdown
                 v-model="data.workflowId"
@@ -38,7 +40,7 @@
               />
             </template>
           </Column>
-          <Column header="Appraisal Template" style="min-width: 200px">
+          <Column header="Appraisal" style="width: 200px">
             <template #body="{ data }">
               <Dropdown
                 v-model="data.appraisalTemplateId"
@@ -50,12 +52,12 @@
               />
             </template>
           </Column>
-          <Column header="Actions" style="min-width: 180px">
+          <Column header="Actions" style="width: 140px; text-align: center">
             <template #body="{ data }">
               <div class="action-buttons">
                 <Button
                   v-if="data.emailStatus === 'not_issued'"
-                  label="Create User"
+                  label="Create"
                   size="small"
                   @click="createUser(data)"
                 />
@@ -181,49 +183,94 @@ const submitCreateUser = () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .page-description {
   color: var(--color-gray-600);
   margin-top: var(--spacing-1);
+  font-size: 13px;
 }
 
 .content-card {
   background-color: var(--color-bg);
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border-radius: var(--radius-md);
+  overflow: auto;
 }
 
 .candidate-name {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+}
+
+.candidate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.candidate-name-text {
   font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.candidate-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .candidate-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #155EEF, #0B4EDD);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .workflow-select {
   width: 100%;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .action-buttons {
   display: flex;
   gap: var(--spacing-1);
+  justify-content: center;
+}
+
+.compact-table {
+  font-size: 13px;
+}
+
+.compact-table :deep(th) {
+  padding: 10px 8px !important;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compact-table :deep(td) {
+  padding: 10px 8px !important;
+  font-size: 13px;
+}
+
+.compact-table :deep(.p-datatable-tbody > tr > td) {
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .form-container {
@@ -240,7 +287,7 @@ const submitCreateUser = () => {
 }
 
 .form-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-gray-900);
 }

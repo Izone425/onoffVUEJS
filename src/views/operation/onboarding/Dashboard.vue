@@ -219,26 +219,26 @@ const completeTask = (task) => {
 }
 
 .page-header {
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
 }
 
 .content-card {
   background-color: var(--color-bg);
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .card-header {
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
   border-bottom: 1px solid var(--color-divider);
   display: flex;
   justify-content: space-between;
@@ -246,7 +246,7 @@ const completeTask = (task) => {
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-gray-900);
   margin: 0;
@@ -270,15 +270,15 @@ const completeTask = (task) => {
 }
 
 .employee-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #155EEF, #0B4EDD);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 

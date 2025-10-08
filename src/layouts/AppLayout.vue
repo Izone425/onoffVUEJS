@@ -69,19 +69,19 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 260px;
+  margin-left: 220px;
   transition: margin-left 0.3s ease;
   overflow: hidden;
 }
 
 .main-content.sidebar-collapsed {
-  margin-left: 80px;
+  margin-left: 64px;
 }
 
 .content-area {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
   background-color: var(--color-surface);
 }
 
