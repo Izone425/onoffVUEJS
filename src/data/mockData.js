@@ -327,6 +327,32 @@ export const workflows = [
   },
   {
     id: 2,
+    name: 'Onboarding — Remote Employee v1.0',
+    category: 'onboarding',
+    version: '1.0',
+    status: 'active',
+    tasks: [1, 2, 4, 5, 6],
+    taskCount: 15,
+    triggerType: 'hire_date',
+    triggerOffset: -3,
+    escalationDays: 1,
+    updatedAt: '2025-09-01'
+  },
+  {
+    id: 3,
+    name: 'Onboarding — Executive/Senior Leadership v2.0',
+    category: 'onboarding',
+    version: '2.0',
+    status: 'active',
+    tasks: [1, 2, 3, 4, 5],
+    taskCount: 18,
+    triggerType: 'hire_date',
+    triggerOffset: -7,
+    escalationDays: 1,
+    updatedAt: '2025-09-05'
+  },
+  {
+    id: 4,
     name: 'Offboarding — Voluntary Exit v1.0',
     category: 'offboarding',
     version: '1.0',
@@ -337,6 +363,32 @@ export const workflows = [
     triggerOffset: 0,
     escalationDays: 2,
     updatedAt: '2025-08-10'
+  },
+  {
+    id: 5,
+    name: 'Offboarding — Retirement Exit v1.1',
+    category: 'offboarding',
+    version: '1.1',
+    status: 'active',
+    tasks: [7, 8, 9],
+    taskCount: 10,
+    triggerType: 'resignation_date',
+    triggerOffset: -30,
+    escalationDays: 3,
+    updatedAt: '2025-09-10'
+  },
+  {
+    id: 6,
+    name: 'Offboarding — Contract End (No Renewal) v1.0',
+    category: 'offboarding',
+    version: '1.0',
+    status: 'draft',
+    tasks: [7, 8, 9],
+    taskCount: 7,
+    triggerType: 'termination_date',
+    triggerOffset: -14,
+    escalationDays: 2,
+    updatedAt: '2025-09-12'
   }
 ]
 
