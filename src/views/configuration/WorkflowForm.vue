@@ -422,10 +422,9 @@ const onboardingPhases = [
 ]
 
 const offboardingPhases = [
-  { id: 'notice-period', name: 'Notice Period', description: 'Tasks during notice period' },
-  { id: 'last-week', name: 'Last Week', description: 'Handover and knowledge transfer' },
-  { id: 'last-day', name: 'Last Day', description: 'Exit formalities' },
-  { id: 'post-exit', name: 'Post Exit', description: 'Follow-up after departure' }
+  { id: 'pre-offboarding', name: 'Pre-Offboarding', description: 'Tasks during notice period and preparation' },
+  { id: 'last-day', name: 'Last Day', description: 'Exit formalities and handover' },
+  { id: 'post-offboarding', name: 'Post Offboarding', description: 'Follow-up after departure' }
 ]
 
 // Trigger options
