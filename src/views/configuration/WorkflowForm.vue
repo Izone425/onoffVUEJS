@@ -173,14 +173,19 @@
       </template>
     </Card>
 
-    <!-- Trigger Configuration Dialog -->
-    <Dialog
+    <!-- Trigger Configuration Drawer -->
+    <Sidebar
       v-model:visible="isTriggerModalOpen"
-      modal
-      :header="'Configure Task Trigger'"
+      position="right"
       :style="{ width: '600px' }"
-      class="trigger-dialog"
+      class="trigger-drawer"
     >
+      <template #header>
+        <div class="drawer-header">
+          <h3>Configure Task Trigger</h3>
+          <p class="drawer-subtitle">Set when this task should start and its completion requirements</p>
+        </div>
+      </template>
       <div class="trigger-config-content">
         <!-- Trigger Type Selection -->
         <div class="config-section">
@@ -345,14 +350,16 @@
       </div>
 
       <template #footer>
-        <Button label="Cancel" severity="secondary" outlined @click="isTriggerModalOpen = false" />
-        <Button
-          label="Save"
-          :disabled="!selectedTriggerValue"
-          @click="handleSetTrigger"
-        />
+        <div class="drawer-footer">
+          <Button label="Cancel" severity="secondary" outlined @click="isTriggerModalOpen = false" />
+          <Button
+            label="Save"
+            :disabled="!selectedTriggerValue"
+            @click="handleSetTrigger"
+          />
+        </div>
       </template>
-    </Dialog>
+    </Sidebar>
   </div>
 </template>
 
@@ -364,7 +371,7 @@ import Button from 'primevue/button'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import Dialog from 'primevue/dialog'
+import Sidebar from 'primevue/sidebar'
 import InputSwitch from 'primevue/inputswitch'
 import InputNumber from 'primevue/inputnumber'
 import { workflows, taskTemplates } from '../../data/mockData'
@@ -872,11 +879,52 @@ onMounted(() => {
   color: var(--color-gray-500);
 }
 
-.trigger-dialog .trigger-config-content {
+/* Drawer Styling */
+.trigger-drawer :deep(.p-sidebar) {
+  display: flex;
+  flex-direction: column;
+}
+
+.trigger-drawer :deep(.p-sidebar-header) {
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.trigger-drawer :deep(.p-sidebar-content) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.trigger-drawer :deep(.p-sidebar-footer) {
+  padding: var(--spacing-4);
+  border-top: 1px solid var(--color-divider);
+}
+
+.drawer-header h3 {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.drawer-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-gray-600);
+  line-height: 1.4;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+}
+
+.trigger-config-content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
-  padding: var(--spacing-2) 0;
+  padding: var(--spacing-4);
 }
 
 .config-section {
@@ -918,7 +966,6 @@ onMounted(() => {
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   padding: var(--spacing-3);
-  margin: 0 14px;
 }
 
 .offset-controls {
@@ -981,7 +1028,6 @@ onMounted(() => {
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   padding: var(--spacing-3);
-  margin: 0 14px;
 }
 
 .previous-task-preview {
@@ -995,7 +1041,6 @@ onMounted(() => {
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   padding: var(--spacing-3);
-  margin: 0 14px 21px 14px;
 }
 
 .completion-header {
