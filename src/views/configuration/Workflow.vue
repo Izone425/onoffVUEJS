@@ -81,7 +81,7 @@
               <template #body="{ data }">
                 <div class="action-buttons">
                   <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(data.id)" />
-                  <Button icon="pi pi-eye" size="small" text rounded title="View" />
+                  <Button icon="pi pi-copy" size="small" text rounded title="Duplicate" @click="duplicateWorkflow(data)" />
                 </div>
               </template>
             </Column>
@@ -98,7 +98,7 @@
                 </div>
                 <div class="card-actions">
                   <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(workflow.id)" />
-                  <Button icon="pi pi-eye" size="small" text rounded title="View" />
+                  <Button icon="pi pi-copy" size="small" text rounded title="Duplicate" @click="duplicateWorkflow(workflow)" />
                 </div>
               </div>
               <div class="card-body">
@@ -131,20 +131,77 @@
         </div>
       </div>
     </div>
+
+    <!-- Duplicate Workflow Drawer -->
+    <Sidebar v-model:visible="duplicateDrawerVisible" position="right" :style="{ width: '500px' }">
+      <template #header>
+        <div class="drawer-header">
+          <h3>Duplicate Workflow</h3>
+          <p class="drawer-subtitle">Create a copy of this workflow with a new name</p>
+        </div>
+      </template>
+
+      <div class="drawer-content">
+        <div class="form-section">
+          <label class="form-label">Original Workflow</label>
+          <div class="original-workflow-info">
+            <span class="pi pi-sitemap workflow-icon"></span>
+            <div class="workflow-details">
+              <p class="workflow-name">{{ duplicateWorkflowData?.name }}</p>
+              <span :class="['category-badge', duplicateWorkflowData?.category]">
+                {{ duplicateWorkflowData?.category }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label for="new-workflow-name" class="form-label">New Workflow Name *</label>
+          <InputText
+            id="new-workflow-name"
+            v-model="newWorkflowName"
+            placeholder="Enter new workflow name"
+            class="w-full"
+          />
+          <small class="form-hint">
+            All tasks and configurations will be copied to the new workflow
+          </small>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="drawer-footer">
+          <Button label="Cancel" severity="secondary" outlined @click="closeDuplicateDrawer" />
+          <Button
+            label="Duplicate Workflow"
+            icon="pi pi-copy"
+            :disabled="!newWorkflowName.trim()"
+            @click="confirmDuplicate"
+          />
+        </div>
+      </template>
+    </Sidebar>
   </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import Sidebar from 'primevue/sidebar'
+import InputText from 'primevue/inputtext'
 import { workflows } from '../../data/mockData'
 
 const router = useRouter()
+const toast = useToast()
 
 const selectedCategory = ref('onboarding')
 const viewMode = ref('list') // 'list' or 'card'
+const duplicateDrawerVisible = ref(false)
+const duplicateWorkflowData = ref(null)
+const newWorkflowName = ref('')
 
 const filteredWorkflows = computed(() => {
   return workflows.filter(w => w.category === selectedCategory.value)
@@ -163,6 +220,40 @@ const editWorkflow = (workflowId) => {
     params: { id: workflowId },
     query: { type: selectedCategory.value }
   })
+}
+
+const duplicateWorkflow = (workflow) => {
+  duplicateWorkflowData.value = workflow
+  newWorkflowName.value = `${workflow.name} (Copy)`
+  duplicateDrawerVisible.value = true
+}
+
+const closeDuplicateDrawer = () => {
+  duplicateDrawerVisible.value = false
+  duplicateWorkflowData.value = null
+  newWorkflowName.value = ''
+}
+
+const confirmDuplicate = () => {
+  if (!newWorkflowName.value.trim()) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Validation Error',
+      detail: 'Please enter a workflow name',
+      life: 3000
+    })
+    return
+  }
+
+  // In a real application, this would create a new workflow
+  toast.add({
+    severity: 'success',
+    summary: 'Workflow Duplicated',
+    detail: `"${newWorkflowName.value}" has been created successfully`,
+    life: 3000
+  })
+
+  closeDuplicateDrawer()
 }
 </script>
 
@@ -406,5 +497,87 @@ const editWorkflow = (workflowId) => {
 
 .detail-value {
   color: var(--color-gray-900);
+}
+
+/* Duplicate Drawer Styles */
+.drawer-header h3 {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.drawer-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-gray-600);
+  line-height: 1.4;
+}
+
+.drawer-content {
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-gray-700);
+}
+
+.form-hint {
+  color: var(--color-gray-600);
+  font-size: 12px;
+  margin-top: var(--spacing-1);
+}
+
+.original-workflow-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background-color: #f9fafb;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.workflow-icon {
+  font-size: 24px;
+  color: var(--color-primary-600);
+  flex-shrink: 0;
+}
+
+.workflow-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  flex: 1;
+}
+
+.workflow-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-gray-900);
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-top: 1px solid var(--color-divider);
+}
+
+.w-full {
+  width: 100%;
 }
 </style>
