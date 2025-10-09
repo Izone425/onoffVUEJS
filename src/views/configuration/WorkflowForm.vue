@@ -719,11 +719,134 @@ const generatePreviousTaskLabel = (tasks, taskId) => {
   return `After "${template?.label || task.task}" is completed`
 }
 
+const loadWorkflowData = (workflowId) => {
+  // Find the workflow from mock data
+  const workflow = workflows.find(w => w.id === parseInt(workflowId))
+
+  if (!workflow) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Workflow not found',
+      life: 3000
+    })
+    handleBack()
+    return
+  }
+
+  // Populate workflow details
+  workflowName.value = workflow.name
+
+  // Generate dummy tasks based on workflow type
+  if (workflow.category === 'onboarding') {
+    // Create sample onboarding tasks
+    taskRows.value = [
+      // Pre-Onboarding phase
+      {
+        id: 'task-1',
+        phase: 'pre-onboarding',
+        task: 1, // Welcome Pack
+        assignee: 'hr_admin',
+        trigger: 'date_offset',
+        triggerLabel: '3 days before Hire Date'
+      },
+      {
+        id: 'task-2',
+        phase: 'pre-onboarding',
+        task: 4, // Grant Email & HRMS Access
+        assignee: 'it_admin',
+        trigger: 'date_offset',
+        triggerLabel: '1 days before Hire Date'
+      },
+      // First-day Onboarding phase
+      {
+        id: 'task-3',
+        phase: 'first-day-onboarding',
+        task: 3, // Day 1 Orientation
+        assignee: 'hr_admin',
+        trigger: 'hire_date',
+        triggerLabel: 'Hire Date'
+      },
+      {
+        id: 'task-4',
+        phase: 'first-day-onboarding',
+        task: 5, // Issue Laptop & ID Card
+        assignee: 'it_admin',
+        trigger: 'hire_date',
+        triggerLabel: 'Hire Date'
+      },
+      // Next day Onboarding phase
+      {
+        id: 'task-5',
+        phase: 'next-day-onboarding',
+        task: 2, // Read Employee Handbook
+        assignee: 'hr_admin',
+        trigger: 'date_offset',
+        triggerLabel: '1 days after Hire Date'
+      },
+      {
+        id: 'task-6',
+        phase: 'next-day-onboarding',
+        task: 6, // Security & Compliance Quiz
+        assignee: 'hr_coordinator',
+        trigger: 'previous_task',
+        triggerLabel: 'After "Read Employee Handbook" is completed'
+      }
+    ]
+  } else {
+    // Create sample offboarding tasks
+    taskRows.value = [
+      // Pre-Offboarding phase
+      {
+        id: 'task-1',
+        phase: 'pre-offboarding',
+        task: 7, // Exit Interview
+        assignee: 'hr_admin',
+        trigger: 'resignation_accepted',
+        triggerLabel: 'Resignation Accepted'
+      },
+      {
+        id: 'task-2',
+        phase: 'pre-offboarding',
+        task: 9, // Final Pay & Benefits Briefing
+        assignee: 'hr_admin',
+        trigger: 'date_offset',
+        triggerLabel: '3 days before Last Work Date'
+      },
+      // Last Day phase
+      {
+        id: 'task-3',
+        phase: 'last-day',
+        task: 8, // Revoke Access & Collect Assets
+        assignee: 'it_admin',
+        trigger: 'termination_date',
+        triggerLabel: 'Termination Date'
+      },
+      // Post Offboarding phase
+      {
+        id: 'task-4',
+        phase: 'post-offboarding',
+        task: 8, // Follow-up checklist
+        assignee: 'hr_admin',
+        trigger: 'date_offset',
+        triggerLabel: '7 days after Termination Date'
+      }
+    ]
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Workflow Loaded',
+    detail: `Loaded workflow: ${workflow.name}`,
+    life: 3000
+  })
+}
+
 // Initialize
 onMounted(() => {
-  if (isEditMode.value) {
+  if (isEditMode.value && route.params.id) {
     // Load workflow data for editing
-    workflowName.value = 'Sample Workflow'
+    loadWorkflowData(route.params.id)
   }
 })
 </script>
