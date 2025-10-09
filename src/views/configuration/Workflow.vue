@@ -78,9 +78,9 @@
             </Column>
             <Column field="updatedAt" header="Updated" style="min-width: 150px"></Column>
             <Column header="Actions" style="min-width: 150px">
-              <template #body>
+              <template #body="{ data }">
                 <div class="action-buttons">
-                  <Button icon="pi pi-pencil" size="small" text rounded title="Edit" />
+                  <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(data.id)" />
                   <Button icon="pi pi-eye" size="small" text rounded title="View" />
                 </div>
               </template>
@@ -97,7 +97,7 @@
                   <span class="pi pi-sitemap"></span>
                 </div>
                 <div class="card-actions">
-                  <Button icon="pi pi-pencil" size="small" text rounded title="Edit" />
+                  <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(workflow.id)" />
                   <Button icon="pi pi-eye" size="small" text rounded title="View" />
                 </div>
               </div>
@@ -135,10 +135,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import { workflows } from '../../data/mockData'
+
+const router = useRouter()
 
 const selectedCategory = ref('onboarding')
 const viewMode = ref('list') // 'list' or 'card'
@@ -148,7 +151,18 @@ const filteredWorkflows = computed(() => {
 })
 
 const createWorkflow = () => {
-  console.log('Create new workflow')
+  router.push({
+    name: 'WorkflowCreate',
+    query: { type: selectedCategory.value }
+  })
+}
+
+const editWorkflow = (workflowId) => {
+  router.push({
+    name: 'WorkflowEdit',
+    params: { id: workflowId },
+    query: { type: selectedCategory.value }
+  })
 }
 </script>
 

@@ -52,6 +52,18 @@ const routes = [
         meta: { title: 'Workflow Builder', roles: ['HR Admin'] }
       },
       {
+        path: 'configuration/workflow/create',
+        name: 'WorkflowCreate',
+        component: () => import('../views/configuration/WorkflowForm.vue'),
+        meta: { title: 'Create Workflow', roles: ['HR Admin'] }
+      },
+      {
+        path: 'configuration/workflow/:id/edit',
+        name: 'WorkflowEdit',
+        component: () => import('../views/configuration/WorkflowForm.vue'),
+        meta: { title: 'Edit Workflow', roles: ['HR Admin'] }
+      },
+      {
         path: 'configuration/audit-trail',
         name: 'AuditTrail',
         component: () => import('../views/configuration/AuditTrail.vue'),
