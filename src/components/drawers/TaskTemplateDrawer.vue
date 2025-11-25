@@ -367,6 +367,7 @@ const resetForm = () => {
 
 watch(() => props.editingTemplate, (template) => {
   if (template) {
+    // Set basic form data
     formData.value = {
       taskName: template.name,
       taskType: template.type,
@@ -375,11 +376,405 @@ watch(() => props.editingTemplate, (template) => {
       url: template.url || '',
       isActive: template.isActive !== undefined ? template.isActive : true
     }
+
+    // Clear all type-specific states first
+    clearAllTypeSpecificStates()
+
+    // Populate type-specific data based on template type
+    populateTypeSpecificData(template)
   } else {
     // Reset form when creating new template
     resetForm()
   }
 }, { immediate: true })
+
+// Clear all type-specific configuration states
+const clearAllTypeSpecificStates = () => {
+  selectedInformationFields.value = []
+  informationRequirements.value = {}
+  requiresDocumentUpload.value = false
+  selectedDocuments.value = []
+  documentRequirements.value = {}
+  systemAccesses.value = []
+  assetItems.value = []
+  questionnaireQuestions.value = []
+  checklistItems.value = []
+}
+
+// Populate type-specific data based on template
+const populateTypeSpecificData = (template) => {
+  const type = template.type
+
+  switch (type) {
+    case 'document':
+      populateDocumentData(template)
+      break
+    case 'information':
+      populateInformationData(template)
+      break
+    case 'system':
+    case 'system_access':
+      populateSystemAccessData(template)
+      break
+    case 'asset':
+      populateAssetData(template)
+      break
+    case 'questionnaire':
+      populateQuestionnaireData(template)
+      break
+    case 'checklist':
+      populateChecklistData(template)
+      break
+    default:
+      // General or meeting type - no additional data needed
+      break
+  }
+}
+
+// Populate document form data
+const populateDocumentData = (template) => {
+  // Check if template has document configuration data
+  if (template.documentConfig) {
+    requiresDocumentUpload.value = template.documentConfig.requiresUpload || false
+    selectedDocuments.value = template.documentConfig.selectedDocuments || []
+    documentRequirements.value = template.documentConfig.requirements || {}
+  } else {
+    // Provide realistic mock data based on template name/id
+    requiresDocumentUpload.value = true
+
+    if (template.name?.toLowerCase().includes('handbook') || template.id === 2) {
+      selectedDocuments.value = ['ic', 'passport']
+      documentRequirements.value = {
+        'ic': true,
+        'passport': false
+      }
+    } else if (template.name?.toLowerCase().includes('information') || template.name?.toLowerCase().includes('form')) {
+      selectedDocuments.value = ['ic', 'passport', 'medical-checkup', 'driving-license']
+      documentRequirements.value = {
+        'ic': true,
+        'passport': true,
+        'medical-checkup': true,
+        'driving-license': false
+      }
+    } else {
+      // Default document data
+      selectedDocuments.value = ['ic', 'work-permit', 'bank-statement']
+      documentRequirements.value = {
+        'ic': true,
+        'work-permit': true,
+        'bank-statement': false
+      }
+    }
+  }
+}
+
+// Populate information form data
+const populateInformationData = (template) => {
+  if (template.informationConfig) {
+    selectedInformationFields.value = template.informationConfig.selectedFields || []
+    informationRequirements.value = template.informationConfig.requirements || {}
+  } else {
+    // Provide realistic mock data based on template name
+    if (template.name?.toLowerCase().includes('payroll') || template.name?.toLowerCase().includes('financial')) {
+      selectedInformationFields.value = [
+        'full-name', 'email', 'phone', 'address',
+        'emergency-contact', 'emergency-phone',
+        'bank-account', 'bank-name', 'tax-identification',
+        'epf-number', 'socso-number'
+      ]
+      informationRequirements.value = {
+        'full-name': true,
+        'email': true,
+        'phone': true,
+        'address': true,
+        'emergency-contact': true,
+        'emergency-phone': true,
+        'bank-account': true,
+        'bank-name': true,
+        'tax-identification': true,
+        'epf-number': false,
+        'socso-number': false
+      }
+    } else {
+      // Default personal information data
+      selectedInformationFields.value = [
+        'full-name', 'email', 'phone', 'address',
+        'date-of-birth', 'ic-number'
+      ]
+      informationRequirements.value = {
+        'full-name': true,
+        'email': true,
+        'phone': true,
+        'address': true,
+        'date-of-birth': true,
+        'ic-number': true
+      }
+    }
+  }
+}
+
+// Populate system/access data
+const populateSystemAccessData = (template) => {
+  if (template.systemConfig) {
+    systemAccesses.value = template.systemConfig.accesses || []
+  } else {
+    // Provide realistic mock data
+    if (template.name?.toLowerCase().includes('grant') || template.name?.toLowerCase().includes('access') || template.id === 4) {
+      systemAccesses.value = [
+        {
+          id: `system-${Date.now()}-1`,
+          name: 'Corporate Email (Outlook)',
+          description: 'Set up company email account with standard mailbox size and distribution lists',
+          pic: 'IT Admin'
+        },
+        {
+          id: `system-${Date.now()}-2`,
+          name: 'HRMS Portal Access',
+          description: 'Configure access to HR management system for leave, claims, and personal info updates',
+          pic: 'HR Admin'
+        },
+        {
+          id: `system-${Date.now()}-3`,
+          name: 'SharePoint & OneDrive',
+          description: 'Set up cloud storage and collaboration workspace access',
+          pic: 'IT Admin'
+        }
+      ]
+    } else {
+      systemAccesses.value = [
+        {
+          id: `system-${Date.now()}-1`,
+          name: 'VPN Access',
+          description: 'Configure remote access VPN credentials',
+          pic: 'IT Admin'
+        },
+        {
+          id: `system-${Date.now()}-2`,
+          name: 'Project Management Tool',
+          description: 'Set up Jira/Trello access for project tracking',
+          pic: 'IT Admin'
+        }
+      ]
+    }
+  }
+}
+
+// Populate asset data
+const populateAssetData = (template) => {
+  if (template.assetConfig) {
+    assetItems.value = template.assetConfig.items || []
+  } else {
+    // Provide realistic mock data
+    if (template.name?.toLowerCase().includes('issue') || template.name?.toLowerCase().includes('laptop') || template.id === 5) {
+      assetItems.value = [
+        {
+          id: `asset-${Date.now()}-1`,
+          name: 'Laptop Computer',
+          description: 'Business laptop with Windows 11 Pro, Office 365, and standard security software pre-installed',
+          pic: 'IT Admin',
+          handoverLetter: true
+        },
+        {
+          id: `asset-${Date.now()}-2`,
+          name: 'Employee ID Card',
+          description: 'Photo ID card with building access and time attendance functionality',
+          pic: 'HR Admin',
+          handoverLetter: false
+        },
+        {
+          id: `asset-${Date.now()}-3`,
+          name: 'Mobile Phone',
+          description: 'Company mobile device with data plan for business communications',
+          pic: 'IT Admin',
+          handoverLetter: true
+        }
+      ]
+    } else {
+      assetItems.value = [
+        {
+          id: `asset-${Date.now()}-1`,
+          name: 'Access Card',
+          description: 'Building and room access card',
+          pic: 'HR Admin',
+          handoverLetter: false
+        },
+        {
+          id: `asset-${Date.now()}-2`,
+          name: 'Parking Pass',
+          description: 'Company parking lot access permit',
+          pic: 'Facilities Manager',
+          handoverLetter: false
+        }
+      ]
+    }
+  }
+}
+
+// Populate questionnaire data
+const populateQuestionnaireData = (template) => {
+  if (template.questionnaireConfig) {
+    questionnaireQuestions.value = template.questionnaireConfig.questions || []
+  } else if (template.questions) {
+    // Map existing questions format to our format
+    questionnaireQuestions.value = template.questions.map((q, index) => ({
+      id: `question-${Date.now()}-${index}`,
+      question: q.text || q.question,
+      responseType: mapQuestionType(q.type),
+      required: true,
+      picklistOptions: q.options ? q.options.map((opt, optIndex) => ({
+        id: `option-${Date.now()}-${index}-${optIndex}`,
+        text: opt,
+        isCorrectAnswer: q.correctAnswer === optIndex
+      })) : []
+    }))
+  } else {
+    // Provide realistic mock data
+    if (template.name?.toLowerCase().includes('security') || template.name?.toLowerCase().includes('quiz') || template.id === 6) {
+      questionnaireQuestions.value = [
+        {
+          id: `question-${Date.now()}-1`,
+          question: "What is the company's policy on password requirements?",
+          responseType: 'picklist-single',
+          required: true,
+          picklistOptions: [
+            { id: `opt-1-1`, text: 'At least 8 characters with mixed case and special characters', isCorrectAnswer: true },
+            { id: `opt-1-2`, text: 'Any combination is acceptable', isCorrectAnswer: false },
+            { id: `opt-1-3`, text: 'Minimum 4 characters', isCorrectAnswer: false },
+            { id: `opt-1-4`, text: 'Only numbers are required', isCorrectAnswer: false }
+          ]
+        },
+        {
+          id: `question-${Date.now()}-2`,
+          question: 'Which of the following are considered security threats? (Select all that apply)',
+          responseType: 'picklist-multiple',
+          required: true,
+          picklistOptions: [
+            { id: `opt-2-1`, text: 'Phishing emails', isCorrectAnswer: true },
+            { id: `opt-2-2`, text: 'Sharing passwords with colleagues', isCorrectAnswer: true },
+            { id: `opt-2-3`, text: 'Using company VPN', isCorrectAnswer: false },
+            { id: `opt-2-4`, text: 'Leaving computer unlocked', isCorrectAnswer: true }
+          ]
+        },
+        {
+          id: `question-${Date.now()}-3`,
+          question: 'Describe a situation where you would report a security incident.',
+          responseType: 'text-multiline',
+          required: true,
+          picklistOptions: []
+        }
+      ]
+    } else if (template.name?.toLowerCase().includes('feedback') || template.name?.toLowerCase().includes('survey')) {
+      questionnaireQuestions.value = [
+        {
+          id: `question-${Date.now()}-1`,
+          question: 'How would you rate your overall onboarding experience?',
+          responseType: 'picklist-single',
+          required: true,
+          picklistOptions: [
+            { id: `opt-1-1`, text: 'Excellent', isCorrectAnswer: false },
+            { id: `opt-1-2`, text: 'Good', isCorrectAnswer: false },
+            { id: `opt-1-3`, text: 'Average', isCorrectAnswer: false },
+            { id: `opt-1-4`, text: 'Poor', isCorrectAnswer: false }
+          ]
+        },
+        {
+          id: `question-${Date.now()}-2`,
+          question: 'What aspects of the onboarding could be improved?',
+          responseType: 'text-multiline',
+          required: false,
+          picklistOptions: []
+        }
+      ]
+    } else {
+      questionnaireQuestions.value = [
+        {
+          id: `question-${Date.now()}-1`,
+          question: 'Please provide your feedback',
+          responseType: 'text-multiline',
+          required: true,
+          picklistOptions: []
+        }
+      ]
+    }
+  }
+}
+
+// Map question type from mock data format to component format
+const mapQuestionType = (type) => {
+  const typeMap = {
+    'single_choice': 'picklist-single',
+    'multiple_choice': 'picklist-multiple',
+    'text': 'text',
+    'text_multiline': 'text-multiline'
+  }
+  return typeMap[type] || 'text'
+}
+
+// Populate checklist data
+const populateChecklistData = (template) => {
+  if (template.checklistConfig) {
+    checklistItems.value = template.checklistConfig.items || []
+  } else if (template.items) {
+    // Map existing items format to our format
+    checklistItems.value = template.items.map((item, index) => ({
+      id: `checklist-${Date.now()}-${index}`,
+      title: item.text || item.title,
+      description: item.description || `Complete ${item.text || item.title} as part of the offboarding process`,
+      pic: item.owner || item.pic || 'IT Admin'
+    }))
+  } else {
+    // Provide realistic mock data
+    if (template.name?.toLowerCase().includes('revoke') || template.name?.toLowerCase().includes('collect') || template.id === 8) {
+      checklistItems.value = [
+        {
+          id: `checklist-${Date.now()}-1`,
+          title: 'Revoke Email Access',
+          description: 'Disable email account and redirect important messages to designated team member',
+          pic: 'IT Admin'
+        },
+        {
+          id: `checklist-${Date.now()}-2`,
+          title: 'Collect Company Laptop',
+          description: 'Retrieve laptop, charger, and any accessories. Perform data backup if needed.',
+          pic: 'IT Admin'
+        },
+        {
+          id: `checklist-${Date.now()}-3`,
+          title: 'Collect Employee ID Card',
+          description: 'Retrieve access card and deactivate building access permissions',
+          pic: 'HR Admin'
+        },
+        {
+          id: `checklist-${Date.now()}-4`,
+          title: 'Revoke System Access',
+          description: 'Remove access from all internal systems including VPN, GitHub, and cloud services',
+          pic: 'IT Admin'
+        },
+        {
+          id: `checklist-${Date.now()}-5`,
+          title: 'Complete Asset Inventory Check',
+          description: 'Verify all company assets have been returned and update asset tracking system',
+          pic: 'IT Admin'
+        }
+      ]
+    } else {
+      checklistItems.value = [
+        {
+          id: `checklist-${Date.now()}-1`,
+          title: 'Complete Task 1',
+          description: 'First checklist item description',
+          pic: 'HR Admin'
+        },
+        {
+          id: `checklist-${Date.now()}-2`,
+          title: 'Complete Task 2',
+          description: 'Second checklist item description',
+          pic: 'Department Manager'
+        }
+      ]
+    }
+  }
+}
 
 // Watch visibility to reset form when drawer opens for new template
 watch(() => props.visible, (isVisible) => {

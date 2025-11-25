@@ -158,7 +158,8 @@ export const taskTemplates = [
     dependencies: [],
     instructions: 'Prepare and send welcome pack containing company swag, handbook, and starter guide.',
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 2,
@@ -175,7 +176,8 @@ export const taskTemplates = [
     requireESign: true,
     attachments: ['Employee_Handbook_v3.pdf'],
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 3,
@@ -192,13 +194,14 @@ export const taskTemplates = [
     location: 'Meeting Room A',
     requireConfirmation: true,
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 4,
     name: 'Grant Email & HRMS Access',
     description: 'Provision system access for new hire',
-    type: 'system_access',
+    type: 'system',
     indicator: 'onboarding',
     ownerRole: 'IT/PIC',
     defaultAssignee: null,
@@ -209,7 +212,8 @@ export const taskTemplates = [
     accessLevel: 'Contributor',
     action: 'grant',
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 5,
@@ -226,7 +230,8 @@ export const taskTemplates = [
     action: 'issue',
     location: 'HQ IT Desk',
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 6,
@@ -255,7 +260,8 @@ export const taskTemplates = [
       }
     ],
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 7,
@@ -271,7 +277,8 @@ export const taskTemplates = [
     mode: 'in_person',
     requireConfirmation: true,
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 8,
@@ -292,7 +299,8 @@ export const taskTemplates = [
       { id: 5, text: 'Collect Access Card', owner: 'IT' }
     ],
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
   },
   {
     id: 9,
@@ -307,7 +315,110 @@ export const taskTemplates = [
     dependencies: [],
     instructions: 'Schedule meeting to discuss final pay, unused leave, benefits continuation, and exit paperwork.',
     createdAt: '2025-08-15',
-    updatedAt: '2025-08-20'
+    updatedAt: '2025-08-20',
+    isActive: true
+  },
+  {
+    id: 10,
+    name: 'Employee Information Form',
+    description: 'Collect personal and contact information from new hire',
+    type: 'information',
+    indicator: 'onboarding',
+    ownerRole: 'HR Admin',
+    defaultAssignee: null,
+    sla: 2,
+    mandatory: true,
+    dependencies: [],
+    createdAt: '2025-09-01',
+    updatedAt: '2025-09-05',
+    isActive: true
+  },
+  {
+    id: 11,
+    name: 'Payroll Setup Form',
+    description: 'Collect banking and tax information for payroll setup',
+    type: 'information',
+    indicator: 'onboarding',
+    ownerRole: 'Finance',
+    defaultAssignee: null,
+    sla: 3,
+    mandatory: true,
+    dependencies: [],
+    createdAt: '2025-09-01',
+    updatedAt: '2025-09-05',
+    isActive: true
+  },
+  {
+    id: 12,
+    name: 'Employee Feedback Survey',
+    description: 'Collect feedback on onboarding experience',
+    type: 'questionnaire',
+    indicator: 'onboarding',
+    ownerRole: 'Staff',
+    defaultAssignee: null,
+    sla: 7,
+    mandatory: false,
+    dependencies: [],
+    createdAt: '2025-09-10',
+    updatedAt: '2025-09-12',
+    isActive: true
+  },
+  {
+    id: 13,
+    name: 'Knowledge Transfer Checklist',
+    description: 'Ensure proper knowledge transfer before departure',
+    type: 'checklist',
+    indicator: 'offboarding',
+    ownerRole: 'Manager',
+    defaultAssignee: null,
+    sla: 5,
+    mandatory: true,
+    dependencies: [],
+    items: [
+      { id: 1, text: 'Document ongoing projects', owner: 'Employee' },
+      { id: 2, text: 'Hand over client contacts', owner: 'Employee' },
+      { id: 3, text: 'Train replacement staff', owner: 'Employee' },
+      { id: 4, text: 'Share access credentials', owner: 'IT' }
+    ],
+    createdAt: '2025-09-15',
+    updatedAt: '2025-09-18',
+    isActive: true
+  },
+  {
+    id: 14,
+    name: 'Return Company Assets',
+    description: 'Collect all company assets from departing employee',
+    type: 'asset',
+    indicator: 'offboarding',
+    ownerRole: 'IT/PIC',
+    defaultAssignee: null,
+    sla: 2,
+    mandatory: true,
+    dependencies: [],
+    assetTypes: ['Laptop', 'Access Card', 'Phone', 'Monitor'],
+    action: 'collect',
+    location: 'HQ IT Desk',
+    createdAt: '2025-09-15',
+    updatedAt: '2025-09-18',
+    isActive: true
+  },
+  {
+    id: 15,
+    name: 'Revoke System Access',
+    description: 'Remove all system access for departing employee',
+    type: 'system',
+    indicator: 'offboarding',
+    ownerRole: 'IT/PIC',
+    defaultAssignee: null,
+    sla: 1,
+    mandatory: true,
+    dependencies: [],
+    systems: [1, 2, 3, 4, 5],
+    accessLevel: null,
+    action: 'revoke',
+    createdAt: '2025-09-15',
+    updatedAt: '2025-09-18',
+    isActive: true
   }
 ]
 
