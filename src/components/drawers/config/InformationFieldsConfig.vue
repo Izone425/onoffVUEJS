@@ -26,6 +26,7 @@
                 :inputId="field.id"
                 v-model="localSelectedFields"
                 :value="field.id"
+                :disabled="viewMode"
               />
               <label :for="field.id" class="checkbox-label">{{ field.label }}</label>
             </div>
@@ -41,10 +42,12 @@
                 :inputId="field.id"
                 v-model="localSelectedFields"
                 :value="field.id"
+                :disabled="viewMode"
               />
               <label :for="field.id" class="checkbox-label">
                 {{ field.label }}
                 <Button
+                  v-if="!viewMode"
                   icon="pi pi-times"
                   text
                   rounded
@@ -59,8 +62,8 @@
         </div>
       </div>
 
-      <!-- Add Custom Field -->
-      <div class="add-field-section">
+      <!-- Add Custom Field - Hidden in view mode -->
+      <div v-if="!viewMode" class="add-field-section">
         <Button
           v-if="!isAddingField"
           label="Add Custom Field"
@@ -104,7 +107,7 @@
               <div :class="['status-dot', localRequirements[fieldId] !== false ? 'required' : 'optional']"></div>
               <span class="field-name">{{ getFieldLabel(fieldId) }}</span>
               <Button
-                v-if="fieldId.startsWith('custom-field-')"
+                v-if="fieldId.startsWith('custom-field-') && !viewMode"
                 icon="pi pi-times"
                 text
                 rounded
@@ -119,6 +122,7 @@
                 v-model="localRequirements[fieldId]"
                 :trueValue="true"
                 :falseValue="false"
+                :disabled="viewMode"
               />
               <span :class="['toggle-label', localRequirements[fieldId] !== false ? 'active' : 'inactive']">Compulsory</span>
             </div>
@@ -147,6 +151,10 @@ const props = defineProps({
   requirements: {
     type: Object,
     default: () => ({})
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 

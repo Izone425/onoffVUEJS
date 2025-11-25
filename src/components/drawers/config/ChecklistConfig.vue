@@ -11,6 +11,7 @@
         </div>
       </div>
       <Button
+        v-if="!viewMode"
         label="Add Checklist Item"
         icon="pi pi-plus"
         size="small"
@@ -20,8 +21,8 @@
     </div>
 
     <div class="config-body">
-      <!-- Add New Checklist Item Form -->
-      <div v-if="isAddingChecklistItem" class="add-item-form">
+      <!-- Add New Checklist Item Form - Hidden in view mode -->
+      <div v-if="isAddingChecklistItem && !viewMode" class="add-item-form">
         <div class="form-header">
           <label class="form-label">Add New Checklist Item</label>
           <Button
@@ -106,6 +107,7 @@
                       @input="handleChecklistItemChange(item.id, 'title', item.title)"
                       placeholder="Checklist item title"
                       class="w-full item-title-input"
+                      :disabled="viewMode"
                     />
                   </div>
                 </div>
@@ -117,6 +119,7 @@
                     placeholder="Description of what needs to be completed..."
                     :rows="2"
                     class="w-full"
+                    :disabled="viewMode"
                   />
                 </div>
 
@@ -129,6 +132,7 @@
                     optionValue="value"
                     placeholder="Select PIC"
                     class="w-full"
+                    :disabled="viewMode"
                   />
                 </div>
 
@@ -139,6 +143,7 @@
               </div>
 
               <Button
+                v-if="!viewMode"
                 icon="pi pi-trash"
                 text
                 rounded
@@ -161,8 +166,8 @@
         <div class="empty-icon">
           <span class="pi pi-check-square"></span>
         </div>
-        <p class="empty-title">No checklist items configured yet</p>
-        <p class="empty-subtitle">Click "Add Checklist Item" to get started</p>
+        <p class="empty-title">No checklist items configured{{ viewMode ? '' : ' yet' }}</p>
+        <p v-if="!viewMode" class="empty-subtitle">Click "Add Checklist Item" to get started</p>
       </div>
     </div>
   </div>
@@ -179,6 +184,10 @@ const props = defineProps({
   checklistItems: {
     type: Array,
     default: () => []
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 

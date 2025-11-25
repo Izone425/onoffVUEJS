@@ -14,8 +14,8 @@
     </div>
 
     <div class="config-body">
-      <!-- Add Question Buttons -->
-      <div class="add-question-buttons">
+      <!-- Add Question Buttons - Hidden in view mode -->
+      <div v-if="!viewMode" class="add-question-buttons">
         <Button
           label="Add Question"
           icon="pi pi-plus"
@@ -33,8 +33,8 @@
         />
       </div>
 
-      <!-- AI Assistance Note -->
-      <div v-if="!taskName || !taskName.trim()" class="info-note warning">
+      <!-- AI Assistance Note - Hidden in view mode -->
+      <div v-if="!viewMode && (!taskName || !taskName.trim())" class="info-note warning">
         <p><strong>Note:</strong> Enter a task name first to enable AI-assisted question generation. The AI will analyze your task name and create relevant questions automatically.</p>
       </div>
 
@@ -59,6 +59,7 @@
             </div>
             <div class="question-header-right">
               <Button
+                v-if="!viewMode"
                 icon="pi pi-trash"
                 text
                 rounded
@@ -81,6 +82,7 @@
                   optionValue="value"
                   @change="handleQuestionChange(question.id, 'responseType', question.responseType)"
                   class="w-full"
+                  :disabled="viewMode"
                 />
               </div>
 
@@ -90,6 +92,7 @@
                   <InputSwitch
                     v-model="question.required"
                     @change="handleQuestionChange(question.id, 'required', question.required)"
+                    :disabled="viewMode"
                   />
                   <span class="toggle-label">{{ question.required ? 'Required' : 'Optional' }}</span>
                 </div>
@@ -105,6 +108,7 @@
                 placeholder="Enter your question here..."
                 :rows="3"
                 class="w-full"
+                :disabled="viewMode"
               />
               <InputText
                 v-else
@@ -112,6 +116,7 @@
                 @input="handleQuestionChange(question.id, 'question', question.question)"
                 placeholder="Enter your question here..."
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
@@ -120,6 +125,7 @@
               <div class="picklist-header">
                 <label class="form-label">Answer Options</label>
                 <Button
+                  v-if="!viewMode"
                   label="Add Option"
                   icon="pi pi-plus"
                   size="small"
@@ -148,6 +154,7 @@
                         v-model="option.isCorrectAnswer"
                         :binary="true"
                         @change="handlePicklistOptionChange(question.id, option.id, 'isCorrectAnswer', option.isCorrectAnswer)"
+                        :disabled="viewMode"
                       />
                       <span :class="['correct-label', option.isCorrectAnswer ? 'active' : '']">
                         {{ option.isCorrectAnswer ? '✓ Correct' : 'Correct' }}
@@ -158,9 +165,10 @@
                       @input="handlePicklistOptionChange(question.id, option.id, 'text', option.text)"
                       :placeholder="`Option ${optionIndex + 1}`"
                       class="option-input"
+                      :disabled="viewMode"
                     />
                     <Button
-                      v-if="question.picklistOptions && question.picklistOptions.length > 2"
+                      v-if="question.picklistOptions && question.picklistOptions.length > 2 && !viewMode"
                       icon="pi pi-times"
                       text
                       rounded
@@ -205,6 +213,10 @@ const props = defineProps({
   taskName: {
     type: String,
     default: ''
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 

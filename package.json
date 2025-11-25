@@ -6,7 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:create": "psql -U postgres -c \"CREATE DATABASE timetec_hrv2;\"",
+    "db:drop": "psql -U postgres -c \"DROP DATABASE IF EXISTS timetec_hrv2;\"",
+    "db:schema": "psql -U postgres -d timetec_hrv2 -f database/schema.sql",
+    "db:seed": "psql -U postgres -d timetec_hrv2 -f database/seed.sql",
+    "db:setup": "npm run db:create && npm run db:schema && npm run db:seed",
+    "db:reset": "npm run db:drop && npm run db:setup"
   },
   "dependencies": {
     "@primevue/themes": "^4.4.0",

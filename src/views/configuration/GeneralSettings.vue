@@ -127,12 +127,161 @@
             </div>
           </div>
 
+          <!-- Communication Templates Section -->
+          <div class="settings-section templates-section-inner">
+            <div class="section-header-with-icon">
+              <span class="pi pi-send section-icon-small"></span>
+              <div>
+                <h2 class="section-title">Communication Templates</h2>
+                <p class="section-subtitle">Manage email and SMS templates for notifications</p>
+              </div>
+            </div>
+
+            <div class="templates-grid">
+              <!-- Email Templates Card -->
+              <div class="template-card email-card">
+                <div class="template-card-header">
+                  <div class="template-card-title">
+                    <span class="pi pi-envelope template-icon email"></span>
+                    <div>
+                      <h3>Email Templates</h3>
+                      <span class="template-count">{{ emailTemplates.length }} templates</span>
+                    </div>
+                  </div>
+                  <Button
+                    icon="pi pi-plus"
+                    label="Add New"
+                    size="small"
+                    outlined
+                    @click="createEmailTemplate"
+                  />
+                </div>
+                <div class="template-list">
+                  <div
+                    v-for="template in emailTemplates"
+                    :key="template.id"
+                    class="template-item"
+                    @click="openEmailTemplate(template)"
+                  >
+                    <div class="template-item-left">
+                      <div class="template-item-icon email">
+                        <span class="pi pi-envelope"></span>
+                      </div>
+                      <div class="template-item-info">
+                        <h4 class="template-name">{{ template.name }}</h4>
+                        <div class="template-meta">
+                          <Tag
+                            :value="template.status"
+                            :severity="template.status === 'active' ? 'success' : 'warn'"
+                            class="template-status"
+                          />
+                          <span class="template-date">Updated {{ formatDate(template.lastUpdated) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="template-item-actions">
+                      <Button
+                        icon="pi pi-pencil"
+                        text
+                        rounded
+                        size="small"
+                        @click.stop="openEmailTemplate(template, true)"
+                      />
+                      <Button
+                        icon="pi pi-eye"
+                        text
+                        rounded
+                        size="small"
+                        @click.stop="openEmailTemplate(template)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SMS Templates Card -->
+              <div class="template-card sms-card">
+                <div class="template-card-header">
+                  <div class="template-card-title">
+                    <span class="pi pi-comments template-icon sms"></span>
+                    <div>
+                      <h3>SMS Templates</h3>
+                      <span class="template-count">{{ smsTemplates.length }} templates</span>
+                    </div>
+                  </div>
+                  <Button
+                    icon="pi pi-plus"
+                    label="Add New"
+                    size="small"
+                    outlined
+                    @click="createSMSTemplate"
+                  />
+                </div>
+                <div class="template-list">
+                  <div
+                    v-for="template in smsTemplates"
+                    :key="template.id"
+                    class="template-item"
+                    @click="openSMSTemplate(template)"
+                  >
+                    <div class="template-item-left">
+                      <div class="template-item-icon sms">
+                        <span class="pi pi-comments"></span>
+                      </div>
+                      <div class="template-item-info">
+                        <h4 class="template-name">{{ template.name }}</h4>
+                        <div class="template-meta">
+                          <Tag
+                            :value="template.status"
+                            :severity="template.status === 'active' ? 'success' : 'warn'"
+                            class="template-status"
+                          />
+                          <span class="template-date">Updated {{ formatDate(template.lastUpdated) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="template-item-actions">
+                      <Button
+                        icon="pi pi-pencil"
+                        text
+                        rounded
+                        size="small"
+                        @click.stop="openSMSTemplate(template, true)"
+                      />
+                      <Button
+                        icon="pi pi-eye"
+                        text
+                        rounded
+                        size="small"
+                        @click.stop="openSMSTemplate(template)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-actions">
             <Button label="Cancel" severity="secondary" @click="resetSettings" outlined />
             <Button label="Save Changes" type="submit" :loading="saving" />
           </div>
         </form>
       </div>
+
+      <!-- Email Template Drawer -->
+      <EmailTemplateDrawer
+        v-model="showEmailDrawer"
+        :template="selectedEmailTemplate"
+        @save="handleEmailTemplateSave"
+      />
+
+      <!-- SMS Template Drawer -->
+      <SMSTemplateDrawer
+        v-model="showSMSDrawer"
+        :template="selectedSMSTemplate"
+        @save="handleSMSTemplateSave"
+      />
     </div>
 </template>
 
@@ -143,7 +292,10 @@ import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
+import Tag from 'primevue/tag'
 import { generalSettings, appraisalTemplates } from '../../data/mockData'
+import EmailTemplateDrawer from '../../components/drawers/config/EmailTemplateDrawer.vue'
+import SMSTemplateDrawer from '../../components/drawers/config/SMSTemplateDrawer.vue'
 
 const toast = useToast()
 const saving = ref(false)
@@ -151,6 +303,238 @@ const settings = ref({
   ...generalSettings,
   customReminderDays: 5 // Default custom value
 })
+
+// Email Templates
+const emailTemplates = ref([
+  {
+    id: 1,
+    name: 'Welcome Email',
+    status: 'active',
+    lastUpdated: '2025-08-15',
+    category: 'Onboarding',
+    triggerEvent: 'new_hire',
+    subject: 'Welcome to {{company_name}}, {{employee_name}}!',
+    body: `Dear {{employee_name}},
+
+Welcome to {{company_name}}! We are thrilled to have you join our team as {{position}} in the {{department}} department.
+
+Your start date is {{start_date}}. Please arrive at 9:00 AM and ask for {{manager_name}} at the reception.
+
+Before your first day, please complete the following tasks in our employee portal:
+{{portal_link}}
+
+If you have any questions, please don't hesitate to reach out to HR at {{hr_contact}}.
+
+We look forward to seeing you!
+
+Best regards,
+The HR Team
+{{company_name}}`,
+    ccHR: true,
+    ccManager: true,
+    includeAttachments: true,
+    trackOpens: true
+  },
+  {
+    id: 2,
+    name: 'Task Reminder',
+    status: 'active',
+    lastUpdated: '2025-08-10',
+    category: 'Notification',
+    triggerEvent: 'task_reminder',
+    subject: 'Reminder: {{task_name}} is due on {{due_date}}',
+    body: `Hi {{employee_name}},
+
+This is a friendly reminder that the following task requires your attention:
+
+Task: {{task_name}}
+Due Date: {{due_date}}
+
+Please complete this task as soon as possible. You can access it through the employee portal:
+{{portal_link}}
+
+If you have any questions, please contact your manager {{manager_name}}.
+
+Best regards,
+TimeTec HR System`,
+    ccHR: false,
+    ccManager: false,
+    includeAttachments: false,
+    trackOpens: true
+  },
+  {
+    id: 3,
+    name: 'Escalation Notice',
+    status: 'draft',
+    lastUpdated: '2025-08-20',
+    category: 'Escalation',
+    triggerEvent: 'escalation',
+    subject: 'URGENT: Escalation - {{task_name}} for {{employee_name}}',
+    body: `Dear {{manager_name}},
+
+This is an escalation notice regarding an overdue task that requires immediate attention.
+
+Employee: {{employee_name}}
+Task: {{task_name}}
+Original Due Date: {{due_date}}
+Department: {{department}}
+
+Please take appropriate action to ensure this task is completed.
+
+View details: {{portal_link}}
+
+Best regards,
+HR System`,
+    ccHR: true,
+    ccManager: false,
+    includeAttachments: false,
+    trackOpens: true
+  },
+  {
+    id: 4,
+    name: 'Exit Interview Invite',
+    status: 'active',
+    lastUpdated: '2025-07-25',
+    category: 'Offboarding',
+    triggerEvent: 'exit_interview',
+    subject: 'Exit Interview Invitation - {{company_name}}',
+    body: `Dear {{employee_name}},
+
+As part of our offboarding process, we would like to invite you to an exit interview.
+
+This is an opportunity for you to share your feedback and experiences during your time at {{company_name}}.
+
+Please coordinate with HR at {{hr_contact}} to schedule a convenient time.
+
+We appreciate your contributions and wish you all the best in your future endeavors.
+
+Best regards,
+The HR Team
+{{company_name}}`,
+    ccHR: true,
+    ccManager: false,
+    includeAttachments: false,
+    trackOpens: true
+  }
+])
+
+// SMS Templates
+const smsTemplates = ref([
+  {
+    id: 1,
+    name: 'Task Due Reminder',
+    status: 'active',
+    lastUpdated: '2025-08-12',
+    triggerEvent: 'task_reminder',
+    message: 'Hi {{name}}, reminder: "{{task}}" is due {{due}}. Complete it now: {{link}} - {{company}}',
+    urgent: false,
+    deliveryReport: true,
+    businessHoursOnly: true
+  },
+  {
+    id: 2,
+    name: 'Urgent Action Required',
+    status: 'active',
+    lastUpdated: '2025-08-18',
+    triggerEvent: 'urgent_action',
+    message: 'URGENT: {{name}}, task "{{task}}" requires immediate action. Due: {{due}}. Act now: {{link}}',
+    urgent: true,
+    deliveryReport: true,
+    businessHoursOnly: false
+  },
+  {
+    id: 3,
+    name: 'Welcome SMS',
+    status: 'active',
+    lastUpdated: '2025-08-05',
+    triggerEvent: 'welcome',
+    message: 'Welcome to {{company}}, {{name}}! We are excited to have you. Check your email for details. - HR Team',
+    urgent: false,
+    deliveryReport: true,
+    businessHoursOnly: true
+  }
+])
+
+// Template drawer states
+const showEmailDrawer = ref(false)
+const showSMSDrawer = ref(false)
+const selectedEmailTemplate = ref(null)
+const selectedSMSTemplate = ref(null)
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-MY', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+const openEmailTemplate = (template, editMode = false) => {
+  selectedEmailTemplate.value = { ...template, editMode }
+  showEmailDrawer.value = true
+}
+
+const openSMSTemplate = (template, editMode = false) => {
+  selectedSMSTemplate.value = { ...template, editMode }
+  showSMSDrawer.value = true
+}
+
+const createEmailTemplate = () => {
+  const newTemplate = {
+    id: Date.now(),
+    name: 'New Email Template',
+    status: 'draft',
+    lastUpdated: new Date().toISOString().split('T')[0],
+    category: 'Notification',
+    triggerEvent: 'new_hire',
+    subject: '',
+    body: '',
+    ccHR: false,
+    ccManager: false,
+    includeAttachments: false,
+    trackOpens: true,
+    editMode: true
+  }
+  selectedEmailTemplate.value = newTemplate
+  showEmailDrawer.value = true
+}
+
+const createSMSTemplate = () => {
+  const newTemplate = {
+    id: Date.now(),
+    name: 'New SMS Template',
+    status: 'draft',
+    lastUpdated: new Date().toISOString().split('T')[0],
+    triggerEvent: 'task_reminder',
+    message: '',
+    urgent: false,
+    deliveryReport: true,
+    businessHoursOnly: true,
+    editMode: true
+  }
+  selectedSMSTemplate.value = newTemplate
+  showSMSDrawer.value = true
+}
+
+const handleEmailTemplateSave = (updatedTemplate) => {
+  const index = emailTemplates.value.findIndex(t => t.id === updatedTemplate.id)
+  if (index !== -1) {
+    emailTemplates.value[index] = updatedTemplate
+  } else {
+    emailTemplates.value.push(updatedTemplate)
+  }
+}
+
+const handleSMSTemplateSave = (updatedTemplate) => {
+  const index = smsTemplates.value.findIndex(t => t.id === updatedTemplate.id)
+  if (index !== -1) {
+    smsTemplates.value[index] = updatedTemplate
+  } else {
+    smsTemplates.value.push(updatedTemplate)
+  }
+}
 
 const reminderOptions = [
   { label: 'Never', value: 'never' },
@@ -228,6 +612,188 @@ const resetSettings = () => {
 .page-description {
   color: var(--color-gray-600);
   margin-top: var(--spacing-1);
+}
+
+/* Communication Templates Section */
+.templates-section-inner {
+  border-bottom: none !important;
+}
+
+.section-header-with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.section-icon-small {
+  font-size: 20px;
+  color: var(--color-primary-600);
+  padding: 10px;
+  background-color: var(--color-primary-50);
+  border-radius: var(--radius-md);
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  margin: 2px 0 0 0;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-4);
+}
+
+@media (max-width: 900px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.template-card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.template-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.template-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.template-card-title h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.template-icon {
+  font-size: 20px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+}
+
+.template-icon.email {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.template-icon.sms {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.template-count {
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.template-list {
+  padding: var(--spacing-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-item:hover {
+  background-color: var(--color-gray-50);
+}
+
+.template-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.template-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.template-item-icon.email {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+.template-item-icon.sms {
+  background-color: #f0fdf4;
+  color: #22c55e;
+}
+
+.template-item-icon .pi {
+  font-size: 14px;
+}
+
+.template-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.template-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.template-status {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.template-date {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.template-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.template-item:hover .template-item-actions {
+  opacity: 1;
 }
 
 .settings-card {

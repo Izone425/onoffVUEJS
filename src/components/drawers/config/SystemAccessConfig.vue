@@ -16,6 +16,7 @@
       <div class="section-header">
         <label class="form-label">Systems to Configure</label>
         <Button
+          v-if="!viewMode"
           label="Add System/Application"
           icon="pi pi-plus"
           size="small"
@@ -32,6 +33,7 @@
           <div class="system-header">
             <span class="system-number">#{{ index + 1 }}</span>
             <Button
+              v-if="!viewMode"
               icon="pi pi-trash"
               text
               rounded
@@ -43,26 +45,28 @@
 
           <div class="system-body">
             <div class="field-group">
-              <label class="field-label">System/Application Name *</label>
+              <label class="field-label">System/Application Name {{ viewMode ? '' : '*' }}</label>
               <InputText
                 v-model="system.name"
                 placeholder="e.g., Company Email, HRMS, Zoho CRM"
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Description *</label>
+              <label class="field-label">Description {{ viewMode ? '' : '*' }}</label>
               <Textarea
                 v-model="system.description"
                 placeholder="Brief description of what access/setup is required..."
                 :rows="2"
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Person In Charge (PIC) *</label>
+              <label class="field-label">Person In Charge (PIC) {{ viewMode ? '' : '*' }}</label>
               <Dropdown
                 v-model="system.pic"
                 :options="picOptions"
@@ -70,6 +74,7 @@
                 optionValue="value"
                 placeholder="Select PIC responsible for this system"
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
@@ -108,6 +113,10 @@ const props = defineProps({
   systemAccesses: {
     type: Array,
     default: () => []
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 

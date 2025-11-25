@@ -21,26 +21,69 @@
       <div class="user-menu">
         <button class="user-btn" @click="toggleUserMenu">
           <div class="user-avatar">
-            <span class="user-initials">{{ userInitials }}</span>
+            <span class="user-initials">{{ userStore.userInitials }}</span>
           </div>
           <div class="user-info" v-if="!mobile">
-            <div class="user-name">{{ currentUser.name }}</div>
-            <div class="user-role">{{ currentUser.role }}</div>
+            <div class="user-name">{{ userStore.currentUser.name }}</div>
+            <div class="user-role">{{ userStore.currentRole.name }}</div>
           </div>
           <span class="pi pi-angle-down" v-if="!mobile"></span>
         </button>
 
-        <div class="user-dropdown" v-if="showUserMenu" v-click-outside="closeUserMenu">
+        <div class="user-dropdown" v-show="showUserMenu" ref="userDropdownRef">
+          <!-- User Header -->
           <div class="dropdown-header">
             <div class="user-avatar large">
-              <span class="user-initials">{{ userInitials }}</span>
+              <span class="user-initials">{{ userStore.userInitials }}</span>
             </div>
             <div class="user-details">
-              <div class="user-name">{{ currentUser.name }}</div>
-              <div class="user-email">{{ currentUser.email }}</div>
+              <div class="user-name">{{ userStore.currentUser.name }}</div>
+              <div class="user-email">{{ userStore.currentUser.email }}</div>
             </div>
           </div>
+
+          <!-- Current Role Badge -->
+          <div class="current-role-section">
+            <div class="current-role-badge">
+              <span class="pi pi-shield"></span>
+              <span>{{ userStore.currentRole.name }}</span>
+            </div>
+            <p class="role-description">{{ userStore.currentRole.description }}</p>
+          </div>
+
           <div class="dropdown-divider"></div>
+
+          <!-- Role Switcher Section -->
+          <div class="role-switcher-section">
+            <div class="section-header">
+              <span class="pi pi-sync"></span>
+              <span>Switch View As</span>
+            </div>
+            <div class="role-list">
+              <button
+                v-for="role in userStore.roles"
+                :key="role.id"
+                class="role-item"
+                :class="{ 'active': role.id === userStore.currentRoleId }"
+                @click="handleRoleSwitch(role.id)"
+              >
+                <div class="role-item-left">
+                  <div class="role-icon" :class="getRoleColorClass(role.id)">
+                    <span class="pi pi-user"></span>
+                  </div>
+                  <div class="role-info">
+                    <div class="role-name">{{ role.name }}</div>
+                    <div class="role-desc">{{ role.description }}</div>
+                  </div>
+                </div>
+                <span v-if="role.id === userStore.currentRoleId" class="pi pi-check active-check"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="dropdown-divider"></div>
+
+          <!-- Menu Items -->
           <a href="#" class="dropdown-item">
             <span class="pi pi-user"></span>
             <span>Profile</span>
@@ -50,7 +93,7 @@
             <span>Settings</span>
           </a>
           <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
+          <a href="#" class="dropdown-item logout">
             <span class="pi pi-sign-out"></span>
             <span>Logout</span>
           </a>
@@ -59,7 +102,7 @@
     </div>
 
     <!-- Notifications Panel -->
-    <div class="notifications-panel" v-if="showNotifications" v-click-outside="closeNotifications">
+    <div class="notifications-panel" v-show="showNotifications" ref="notificationsPanelRef">
       <div class="panel-header">
         <h3>Notifications</h3>
         <button class="mark-all-read">Mark all as read</button>
@@ -81,8 +124,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '../../stores/userStore'
 
 defineProps({
   mobile: {
@@ -92,14 +136,13 @@ defineProps({
 })
 
 const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+
 const showUserMenu = ref(false)
 const showNotifications = ref(false)
-
-const currentUser = {
-  name: 'Ahmed Fauzi',
-  email: 'ahmed.f@company.com',
-  role: 'HR Admin'
-}
+const userDropdownRef = ref(null)
+const notificationsPanelRef = ref(null)
 
 const notifications = ref([
   {
@@ -128,16 +171,57 @@ const notifications = ref([
   }
 ])
 
-const pageTitle = computed(() => route.meta.title || 'Dashboard')
-
-const userInitials = computed(() => {
-  const names = currentUser.name.split(' ')
-  return names.map(n => n[0]).join('').toUpperCase()
-})
-
 const notificationCount = computed(() => {
   return notifications.value.filter(n => !n.read).length
 })
+
+const getRoleColorClass = (roleId) => {
+  const colors = {
+    'hr-admin': 'color-blue',
+    'hr-coordinator': 'color-green',
+    'manager': 'color-purple',
+    'it-pic': 'color-orange',
+    'staff': 'color-gray'
+  }
+  return colors[roleId] || 'color-blue'
+}
+
+const handleRoleSwitch = (roleId) => {
+  userStore.switchRole(roleId)
+  showUserMenu.value = false
+
+  // Navigate to the first available page for this role
+  const role = userStore.roles.find(r => r.id === roleId)
+  if (role) {
+    // Check current route access
+    const currentPath = route.path
+
+    // Determine if user still has access to current page
+    let hasAccess = false
+
+    if (currentPath.includes('/configuration/')) {
+      if (currentPath.includes('general-settings')) hasAccess = role.permissions.generalSettings?.read
+      else if (currentPath.includes('user-roles')) hasAccess = role.permissions.roles?.read
+      else if (currentPath.includes('task-templates')) hasAccess = role.permissions.taskTemplates?.read
+      else if (currentPath.includes('workflow')) hasAccess = role.permissions.workflow?.read
+      else if (currentPath.includes('audit-trail')) hasAccess = role.permissions.auditTrail?.read
+    } else if (currentPath.includes('/operation/')) {
+      if (currentPath.includes('pre-hire')) hasAccess = role.permissions.preHireEntry?.read
+      else if (currentPath.includes('dashboard')) hasAccess = role.permissions.dashboards?.read
+    }
+
+    // If no access, redirect to first available page
+    if (!hasAccess) {
+      if (role.permissions.dashboards?.read) {
+        router.push('/operation/onboarding/dashboard')
+      } else if (role.permissions.preHireEntry?.read) {
+        router.push('/operation/onboarding/pre-hire')
+      } else if (role.permissions.generalSettings?.read) {
+        router.push('/configuration/general-settings')
+      }
+    }
+  }
+}
 
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
@@ -157,20 +241,32 @@ const closeNotifications = () => {
   showNotifications.value = false
 }
 
-// Click outside directive
-const vClickOutside = {
-  mounted(el, binding) {
-    el.clickOutsideEvent = (event) => {
-      if (!(el === event.target || el.contains(event.target))) {
-        binding.value()
-      }
+// Click outside handler
+const handleClickOutside = (event) => {
+  // Handle user dropdown
+  if (showUserMenu.value && userDropdownRef.value) {
+    const userBtn = document.querySelector('.user-btn')
+    if (!userDropdownRef.value.contains(event.target) && !userBtn?.contains(event.target)) {
+      showUserMenu.value = false
     }
-    document.addEventListener('click', el.clickOutsideEvent)
-  },
-  unmounted(el) {
-    document.removeEventListener('click', el.clickOutsideEvent)
+  }
+
+  // Handle notifications panel
+  if (showNotifications.value && notificationsPanelRef.value) {
+    const notifBtn = document.querySelector('.notification-btn')
+    if (!notificationsPanelRef.value.contains(event.target) && !notifBtn?.contains(event.target)) {
+      showNotifications.value = false
+    }
   }
 }
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -321,13 +417,15 @@ const vClickOutside = {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 320px;
+  width: 360px;
   background-color: var(--color-bg);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 1000;
   animation: slideDown 0.2s ease;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 @keyframes slideDown {
@@ -354,6 +452,156 @@ const vClickOutside = {
   justify-content: center;
 }
 
+/* Current Role Section */
+.current-role-section {
+  padding: 0 var(--spacing-3) var(--spacing-3);
+}
+
+.current-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #155EEF, #0B4EDD);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.current-role-badge .pi {
+  font-size: 12px;
+}
+
+.role-description {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  margin: 8px 0 0 0;
+}
+
+/* Role Switcher Section */
+.role-switcher-section {
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-2);
+}
+
+.section-header .pi {
+  font-size: 12px;
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.role-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.role-item:hover {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-divider);
+}
+
+.role-item.active {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.role-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.role-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-icon .pi {
+  font-size: 14px;
+}
+
+.role-icon.color-blue {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-icon.color-green {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.role-icon.color-purple {
+  background-color: #f3e8ff;
+  color: #9333ea;
+}
+
+.role-icon.color-orange {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.role-icon.color-gray {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.role-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-info .role-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+  line-height: 1.3;
+}
+
+.role-info .role-desc {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-check {
+  color: #155EEF;
+  font-size: 14px;
+  font-weight: bold;
+}
+
 .dropdown-divider {
   height: 1px;
   background-color: var(--color-divider);
@@ -372,6 +620,14 @@ const vClickOutside = {
 
 .dropdown-item:hover {
   background-color: var(--color-gray-100);
+}
+
+.dropdown-item.logout {
+  color: #dc2626;
+}
+
+.dropdown-item.logout:hover {
+  background-color: #fef2f2;
 }
 
 .dropdown-item .pi {

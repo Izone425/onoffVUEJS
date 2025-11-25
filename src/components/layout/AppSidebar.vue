@@ -22,11 +22,12 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section">
+      <!-- Operation Section -->
+      <div class="nav-section" v-if="userStore.availableOperationItems.length > 0">
         <div class="nav-section-title" v-if="!collapsed">Operation</div>
         <div class="nav-items">
           <router-link
-            v-for="item in operationItems"
+            v-for="item in userStore.availableOperationItems"
             :key="item.path"
             :to="item.path"
             class="nav-item"
@@ -35,15 +36,19 @@
           >
             <span :class="`pi ${item.icon}`" class="nav-icon"></span>
             <span class="nav-label" v-if="!collapsed">{{ item.label }}</span>
+            <span v-if="!collapsed && !userStore.canWrite(item.permission)" class="read-only-badge" title="Read Only">
+              <span class="pi pi-eye"></span>
+            </span>
           </router-link>
         </div>
       </div>
 
-      <div class="nav-section">
+      <!-- Configuration Section -->
+      <div class="nav-section" v-if="userStore.showConfigSection">
         <div class="nav-section-title" v-if="!collapsed">Configuration</div>
         <div class="nav-items">
           <router-link
-            v-for="item in configItems"
+            v-for="item in userStore.availableConfigItems"
             :key="item.path"
             :to="item.path"
             class="nav-item"
@@ -52,10 +57,32 @@
           >
             <span :class="`pi ${item.icon}`" class="nav-icon"></span>
             <span class="nav-label" v-if="!collapsed">{{ item.label }}</span>
+            <span v-if="!collapsed && !userStore.canWrite(item.permission)" class="read-only-badge" title="Read Only">
+              <span class="pi pi-eye"></span>
+            </span>
           </router-link>
         </div>
       </div>
+
+      <!-- No Access Message -->
+      <div v-if="userStore.availableOperationItems.length === 0 && !userStore.showConfigSection" class="no-access-message">
+        <div class="no-access-icon">
+          <span class="pi pi-lock"></span>
+        </div>
+        <p v-if="!collapsed">No modules available for your role</p>
+      </div>
     </nav>
+
+    <!-- Role Indicator -->
+    <div class="role-indicator" v-if="!collapsed">
+      <div class="role-indicator-content">
+        <span class="pi pi-shield"></span>
+        <div class="role-indicator-text">
+          <span class="role-indicator-label">Current Role</span>
+          <span class="role-indicator-name">{{ userStore.currentRole.name }}</span>
+        </div>
+      </div>
+    </div>
 
     <div class="sidebar-footer">
       <button @click="$emit('toggle')" class="collapse-btn">
@@ -68,6 +95,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '../../stores/userStore'
 
 defineProps({
   collapsed: {
@@ -79,52 +107,7 @@ defineProps({
 defineEmits(['toggle'])
 
 const route = useRoute()
-
-const operationItems = [
-  {
-    label: 'Pre-Hire Entry',
-    path: '/operation/onboarding/pre-hire',
-    icon: 'pi-user-plus'
-  },
-  {
-    label: 'Onboarding Dashboard',
-    path: '/operation/onboarding/dashboard',
-    icon: 'pi-sign-in'
-  },
-  {
-    label: 'Offboarding Dashboard',
-    path: '/operation/offboarding/dashboard',
-    icon: 'pi-sign-out'
-  }
-]
-
-const configItems = [
-  {
-    label: 'General Settings',
-    path: '/configuration/general-settings',
-    icon: 'pi-cog'
-  },
-  {
-    label: 'User Roles',
-    path: '/configuration/user-roles',
-    icon: 'pi-shield'
-  },
-  {
-    label: 'Task Templates',
-    path: '/configuration/task-templates',
-    icon: 'pi-file'
-  },
-  {
-    label: 'Workflow Builder',
-    path: '/configuration/workflow',
-    icon: 'pi-sitemap'
-  },
-  {
-    label: 'Audit Trail',
-    path: '/configuration/audit-trail',
-    icon: 'pi-history'
-  }
-]
+const userStore = useUserStore()
 
 const isActive = (path) => {
   return route.path === path || route.path.startsWith(path + '/')
@@ -260,6 +243,7 @@ const isActive = (path) => {
   text-decoration: none;
   transition: all 0.2s;
   cursor: pointer;
+  position: relative;
 }
 
 .nav-item:hover {
@@ -282,6 +266,103 @@ const isActive = (path) => {
 .nav-label {
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.read-only-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.nav-item.active .read-only-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.read-only-badge .pi {
+  font-size: 10px;
+}
+
+/* No Access Message */
+.no-access-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4);
+  text-align: center;
+  color: var(--color-gray-500);
+}
+
+.no-access-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--color-gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.no-access-icon .pi {
+  font-size: 20px;
+  color: var(--color-gray-400);
+}
+
+.no-access-message p {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Role Indicator */
+.role-indicator {
+  padding: var(--spacing-2) var(--spacing-3);
+  border-top: 1px solid var(--color-divider);
+  background-color: var(--color-gray-50);
+}
+
+.role-indicator-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+}
+
+.role-indicator-content .pi {
+  font-size: 14px;
+  color: var(--color-primary-600);
+}
+
+.role-indicator-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-indicator-label {
+  display: block;
+  font-size: 10px;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-indicator-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-900);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -317,5 +398,9 @@ const isActive = (path) => {
 
 .collapsed .sidebar-footer {
   padding: var(--spacing-2);
+}
+
+.collapsed .role-indicator {
+  display: none;
 }
 </style>

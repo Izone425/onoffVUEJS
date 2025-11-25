@@ -3,18 +3,18 @@
     <template #header>
       <div class="drawer-header">
         <div class="header-title-section">
-          <span class="header-icon pi pi-clipboard"></span>
+          <span :class="['header-icon', 'pi', isViewMode ? 'pi-eye' : 'pi-clipboard']"></span>
           <div class="header-text">
-            <h2 class="drawer-title">{{ editingTemplate ? 'Edit Template' : 'Create New Task Template' }}</h2>
-            <p class="drawer-subtitle" v-if="!editingTemplate">Design a new task template with specific requirements, documents, and configuration settings.</p>
+            <h2 class="drawer-title">{{ drawerTitle }}</h2>
+            <p class="drawer-subtitle">{{ drawerSubtitle }}</p>
           </div>
         </div>
       </div>
     </template>
 
     <div class="drawer-content">
-      <!-- Copy Template From - Only show when creating new template -->
-      <div v-if="!editingTemplate" class="form-section copy-section">
+      <!-- Copy Template From - Only show when creating new template (not in view mode) -->
+      <div v-if="!editingTemplate && !isViewMode" class="form-section copy-section">
         <div class="field-group">
           <label for="copyFrom" class="form-label">Copy Template From</label>
           <Dropdown
@@ -58,18 +58,19 @@
       <!-- Task Basic Information -->
       <div class="form-section">
         <div class="field-group">
-          <label for="taskName" class="form-label">Task Name <span class="required">*</span></label>
+          <label for="taskName" class="form-label">Task Name <span class="required" v-if="!isViewMode">*</span></label>
           <InputText
             id="taskName"
             v-model="formData.taskName"
             placeholder="Enter a descriptive task name"
             class="w-full"
+            :disabled="isViewMode"
           />
         </div>
 
         <div class="grid-2">
           <div class="field-group">
-            <label for="taskType" class="form-label">Task Type <span class="required">*</span></label>
+            <label for="taskType" class="form-label">Task Type <span class="required" v-if="!isViewMode">*</span></label>
             <Dropdown
               id="taskType"
               v-model="formData.taskType"
@@ -78,11 +79,12 @@
               optionValue="value"
               placeholder="Select type"
               class="w-full"
+              :disabled="isViewMode"
             />
           </div>
 
           <div class="field-group">
-            <label for="category" class="form-label">Category <span class="required">*</span></label>
+            <label for="category" class="form-label">Category <span class="required" v-if="!isViewMode">*</span></label>
             <Dropdown
               id="category"
               v-model="formData.category"
@@ -91,6 +93,7 @@
               optionValue="value"
               placeholder="Select category"
               class="w-full"
+              :disabled="isViewMode"
             />
           </div>
         </div>
@@ -106,8 +109,9 @@
             placeholder="Provide a detailed description of what this task involves, including any specific instructions or requirements..."
             :rows="4"
             class="w-full"
+            :disabled="isViewMode"
           />
-          <small class="form-help">Detailed descriptions help users understand task requirements</small>
+          <small class="form-help" v-if="!isViewMode">Detailed descriptions help users understand task requirements</small>
         </div>
 
         <div class="field-group">
@@ -118,8 +122,9 @@
             type="url"
             placeholder="https://example.com/resources"
             class="w-full"
+            :disabled="isViewMode"
           />
-          <small class="form-help">Optional: Add a relevant URL or link for this task (documentation, forms, training materials, etc.)</small>
+          <small class="form-help" v-if="!isViewMode">Optional: Add a relevant URL or link for this task (documentation, forms, training materials, etc.)</small>
         </div>
       </div>
 
@@ -128,6 +133,7 @@
         v-if="formData.taskType === 'information'"
         v-model:selectedFields="selectedInformationFields"
         v-model:requirements="informationRequirements"
+        :viewMode="isViewMode"
       />
 
       <!-- Document Upload Settings - Only for Document Form -->
@@ -136,18 +142,21 @@
         v-model:requiresUpload="requiresDocumentUpload"
         v-model:selectedDocuments="selectedDocuments"
         v-model:requirements="documentRequirements"
+        :viewMode="isViewMode"
       />
 
       <!-- System/Access Configuration - Only for System/Access -->
       <SystemAccessConfig
         v-if="formData.taskType === 'system'"
         v-model:systemAccesses="systemAccesses"
+        :viewMode="isViewMode"
       />
 
       <!-- Asset Configuration - Only for Asset -->
       <AssetConfig
         v-if="formData.taskType === 'asset'"
         v-model:assetItems="assetItems"
+        :viewMode="isViewMode"
       />
 
       <!-- Questionnaire Configuration - Only for Questionnaire -->
@@ -155,32 +164,41 @@
         v-if="formData.taskType === 'questionnaire'"
         v-model:questions="questionnaireQuestions"
         :taskName="formData.taskName"
+        :viewMode="isViewMode"
       />
 
       <!-- Checklist Configuration - Only for Checklist -->
       <ChecklistConfig
         v-if="formData.taskType === 'checklist'"
         v-model:checklistItems="checklistItems"
+        :viewMode="isViewMode"
       />
 
-      <!-- Active Status - Always Last -->
+      <!-- Active Status -->
       <div class="form-section">
         <div class="field-group">
           <div class="active-status-toggle">
             <div class="toggle-content">
               <label class="form-label">Active Status</label>
-              <p class="toggle-description">Enable this template for use in onboarding/offboarding workflows</p>
+              <p class="toggle-description">{{ isViewMode ? 'Template is ' + (formData.isActive ? 'active' : 'inactive') : 'Enable this template for use in onboarding/offboarding workflows' }}</p>
             </div>
-            <InputSwitch v-model="formData.isActive" />
+            <InputSwitch v-model="formData.isActive" :disabled="isViewMode" />
           </div>
         </div>
       </div>
+
     </div>
 
     <template #footer>
       <div class="drawer-footer">
-        <Button label="Cancel" severity="secondary" @click="handleClose" outlined />
-        <Button label="Save Template" @click="handleSave" :loading="saving" />
+        <div v-if="!isViewMode">
+          <Button label="Reset Form" severity="secondary" @click="resetForm" text />
+        </div>
+        <div v-else></div>
+        <div class="footer-actions">
+          <Button :label="isViewMode ? 'Close' : 'Cancel'" severity="secondary" @click="handleClose" outlined />
+          <Button v-if="!isViewMode" :label="editingTemplate ? 'Update Template' : 'Create Template'" @click="handleSave" :loading="saving" />
+        </div>
       </div>
     </template>
   </Drawer>
@@ -212,6 +230,23 @@ const emit = defineEmits(['update:visible', 'save'])
 const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
+})
+
+// Computed for view mode
+const isViewMode = computed(() => props.editingTemplate?.viewMode === true)
+
+// Computed for drawer title based on mode
+const drawerTitle = computed(() => {
+  if (isViewMode.value) return 'View Task Template'
+  if (props.editingTemplate) return 'Edit Task Template'
+  return 'Create New Task Template'
+})
+
+// Computed for drawer subtitle based on mode
+const drawerSubtitle = computed(() => {
+  if (isViewMode.value) return 'View the task template details and requirements in read-only mode.'
+  if (props.editingTemplate) return 'Edit the selected task template with its specific settings and requirements.'
+  return 'Design a new task template with specific requirements, documents, and configuration settings.'
 })
 
 const saving = ref(false)
@@ -378,6 +413,11 @@ watch(() => props.visible, (isVisible) => {
   flex-shrink: 0;
 }
 
+.header-icon.pi-eye {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
 .header-text {
   flex: 1;
 }
@@ -491,10 +531,17 @@ watch(() => props.visible, (isVisible) => {
 
 .drawer-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-3);
   border-top: 1px solid var(--color-divider);
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 .active-status-toggle {

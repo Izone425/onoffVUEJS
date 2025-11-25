@@ -16,6 +16,7 @@
       <div class="section-header">
         <label class="form-label">Assets to Manage</label>
         <Button
+          v-if="!viewMode"
           label="Add Asset"
           icon="pi pi-plus"
           size="small"
@@ -32,6 +33,7 @@
           <div class="asset-header">
             <span class="asset-number">#{{ index + 1 }}</span>
             <Button
+              v-if="!viewMode"
               icon="pi pi-trash"
               text
               rounded
@@ -43,26 +45,28 @@
 
           <div class="asset-body">
             <div class="field-group">
-              <label class="field-label">Asset Name *</label>
+              <label class="field-label">Asset Name {{ viewMode ? '' : '*' }}</label>
               <InputText
                 v-model="asset.name"
                 placeholder="e.g., Laptop Computer, Employee ID Card, Mobile Phone"
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Description *</label>
+              <label class="field-label">Description {{ viewMode ? '' : '*' }}</label>
               <Textarea
                 v-model="asset.description"
                 placeholder="Brief description of the asset and any special instructions..."
                 :rows="2"
                 class="w-full"
+                :disabled="viewMode"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Person In Charge (PIC) *</label>
+              <label class="field-label">Person In Charge (PIC) {{ viewMode ? '' : '*' }}</label>
               <Dropdown
                 v-model="asset.pic"
                 :options="picOptions"
@@ -70,6 +74,7 @@
                 optionValue="value"
                 placeholder="Select PIC responsible for this asset"
                 class="w-full"
+                :disabled="viewMode"
               >
                 <template #optiongroup="slotProps">
                   <div class="option-group-label">{{ slotProps.option.label }}</div>
@@ -80,9 +85,9 @@
             <div class="handover-toggle">
               <div class="toggle-content">
                 <label class="toggle-label">Upload Hand-over Letter</label>
-                <p class="toggle-description">Enable if this asset requires a hand-over letter to be uploaded</p>
+                <p class="toggle-description">{{ viewMode ? (asset.handoverLetter ? 'Hand-over letter is required' : 'No hand-over letter required') : 'Enable if this asset requires a hand-over letter to be uploaded' }}</p>
               </div>
-              <InputSwitch v-model="asset.handoverLetter" />
+              <InputSwitch v-model="asset.handoverLetter" :disabled="viewMode" />
             </div>
 
             <div class="pic-info">
@@ -121,6 +126,10 @@ const props = defineProps({
   assetItems: {
     type: Array,
     default: () => []
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 

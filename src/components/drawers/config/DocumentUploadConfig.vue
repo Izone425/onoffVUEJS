@@ -10,7 +10,7 @@
           <p class="header-description">Enable if this task requires users to upload documents</p>
         </div>
       </div>
-      <InputSwitch v-model="localRequiresUpload" />
+      <InputSwitch v-model="localRequiresUpload" :disabled="viewMode" />
     </div>
 
     <div v-if="localRequiresUpload" class="config-body">
@@ -24,11 +24,12 @@
             :inputId="doc.id"
             v-model="localSelectedDocuments"
             :value="doc.id"
+            :disabled="viewMode"
           />
           <label :for="doc.id" class="checkbox-label">
             {{ doc.label }}
             <Button
-              v-if="doc.id.startsWith('custom-')"
+              v-if="doc.id.startsWith('custom-') && !viewMode"
               icon="pi pi-times"
               text
               rounded
@@ -41,8 +42,8 @@
         </div>
       </div>
 
-      <!-- Add Custom Document -->
-      <div class="add-field-section">
+      <!-- Add Custom Document - Hidden in view mode -->
+      <div v-if="!viewMode" class="add-field-section">
         <Button
           v-if="!isAddingDocument"
           label="Add Custom Document"
@@ -92,6 +93,7 @@
                 v-model="localRequirements[docId]"
                 :trueValue="true"
                 :falseValue="false"
+                :disabled="viewMode"
               />
               <span :class="['toggle-label', localRequirements[docId] !== false ? 'active' : 'inactive']">Compulsory</span>
             </div>
@@ -124,6 +126,10 @@ const props = defineProps({
   requirements: {
     type: Object,
     default: () => ({})
+  },
+  viewMode: {
+    type: Boolean,
+    default: false
   }
 })
 
