@@ -49,7 +49,7 @@ const routes = [
         path: 'configuration/workflow',
         name: 'Workflow',
         component: () => import('../views/configuration/Workflow.vue'),
-        meta: { title: 'Workflow Builder', roles: ['HR Admin'] }
+        meta: { title: 'Workflow', roles: ['HR Admin'] }
       },
       {
         path: 'configuration/workflow/create',

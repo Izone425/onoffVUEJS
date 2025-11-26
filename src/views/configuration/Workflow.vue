@@ -57,13 +57,6 @@
                 </div>
               </template>
             </Column>
-            <Column field="category" header="Category" style="min-width: 140px">
-              <template #body="{ data }">
-                <span :class="['category-badge', data.category]">
-                  {{ data.category }}
-                </span>
-              </template>
-            </Column>
             <Column field="taskCount" header="Tasks" style="min-width: 100px">
               <template #body="{ data }">
                 {{ data.taskCount }} tasks
@@ -80,8 +73,9 @@
             <Column header="Actions" style="min-width: 150px">
               <template #body="{ data }">
                 <div class="action-buttons">
+                  <Button icon="pi pi-eye" size="small" text rounded title="View" @click="viewWorkflow(data)" />
                   <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(data.id)" />
-                  <Button icon="pi pi-copy" size="small" text rounded title="Duplicate" @click="duplicateWorkflow(data)" />
+                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" title="Delete" @click="confirmDeleteWorkflow(data)" />
                 </div>
               </template>
             </Column>
@@ -97,19 +91,14 @@
                   <span class="pi pi-sitemap"></span>
                 </div>
                 <div class="card-actions">
+                  <Button icon="pi pi-eye" size="small" text rounded title="View" @click="viewWorkflow(workflow)" />
                   <Button icon="pi pi-pencil" size="small" text rounded title="Edit" @click="editWorkflow(workflow.id)" />
-                  <Button icon="pi pi-copy" size="small" text rounded title="Duplicate" @click="duplicateWorkflow(workflow)" />
+                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" title="Delete" @click="confirmDeleteWorkflow(workflow)" />
                 </div>
               </div>
               <div class="card-body">
                 <h3 class="card-title">{{ workflow.name }}</h3>
                 <div class="card-details">
-                  <div class="detail-row">
-                    <span class="detail-label">Category:</span>
-                    <span :class="['category-badge', workflow.category]">
-                      {{ workflow.category }}
-                    </span>
-                  </div>
                   <div class="detail-row">
                     <span class="detail-label">Tasks:</span>
                     <span class="detail-value">{{ workflow.taskCount }} tasks</span>
@@ -132,55 +121,32 @@
       </div>
     </div>
 
-    <!-- Duplicate Workflow Drawer -->
-    <Sidebar v-model:visible="duplicateDrawerVisible" position="right" :style="{ width: '500px' }">
-      <template #header>
-        <div class="drawer-header">
-          <h3>Duplicate Workflow</h3>
-          <p class="drawer-subtitle">Create a copy of this workflow with a new name</p>
+    <!-- Delete Confirmation Dialog -->
+    <Dialog
+      v-model:visible="deleteDialogVisible"
+      modal
+      header="Delete Workflow"
+      :style="{ width: '450px' }"
+      :closable="true"
+    >
+      <div class="delete-dialog-content">
+        <div class="delete-icon-wrapper">
+          <span class="pi pi-exclamation-triangle"></span>
         </div>
-      </template>
-
-      <div class="drawer-content">
-        <div class="form-section">
-          <label class="form-label">Original Workflow</label>
-          <div class="original-workflow-info">
-            <span class="pi pi-sitemap workflow-icon"></span>
-            <div class="workflow-details">
-              <p class="workflow-name">{{ duplicateWorkflowData?.name }}</p>
-              <span :class="['category-badge', duplicateWorkflowData?.category]">
-                {{ duplicateWorkflowData?.category }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <label for="new-workflow-name" class="form-label">New Workflow Name *</label>
-          <InputText
-            id="new-workflow-name"
-            v-model="newWorkflowName"
-            placeholder="Enter new workflow name"
-            class="w-full"
-          />
-          <small class="form-hint">
-            All tasks and configurations will be copied to the new workflow
-          </small>
-        </div>
+        <p class="delete-message">
+          Are you sure you want to delete <strong>"{{ workflowToDelete?.name }}"</strong>?
+        </p>
+        <p class="delete-warning">
+          This action cannot be undone. All associated tasks and configurations will be permanently removed.
+        </p>
       </div>
-
       <template #footer>
-        <div class="drawer-footer">
-          <Button label="Cancel" severity="secondary" outlined @click="closeDuplicateDrawer" />
-          <Button
-            label="Duplicate Workflow"
-            icon="pi pi-copy"
-            :disabled="!newWorkflowName.trim()"
-            @click="confirmDuplicate"
-          />
+        <div class="dialog-footer">
+          <Button label="Cancel" severity="secondary" outlined @click="closeDeleteDialog" />
+          <Button label="Delete" severity="danger" icon="pi pi-trash" @click="deleteWorkflow" />
         </div>
       </template>
-    </Sidebar>
+    </Dialog>
   </template>
 
 <script setup>
@@ -190,8 +156,7 @@ import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
-import Sidebar from 'primevue/sidebar'
-import InputText from 'primevue/inputtext'
+import Dialog from 'primevue/dialog'
 import { workflows } from '../../data/mockData'
 
 const router = useRouter()
@@ -199,9 +164,8 @@ const toast = useToast()
 
 const selectedCategory = ref('onboarding')
 const viewMode = ref('list') // 'list' or 'card'
-const duplicateDrawerVisible = ref(false)
-const duplicateWorkflowData = ref(null)
-const newWorkflowName = ref('')
+const deleteDialogVisible = ref(false)
+const workflowToDelete = ref(null)
 
 const filteredWorkflows = computed(() => {
   return workflows.filter(w => w.category === selectedCategory.value)
@@ -214,6 +178,16 @@ const createWorkflow = () => {
   })
 }
 
+// View workflow (read-only mode)
+const viewWorkflow = (workflow) => {
+  router.push({
+    name: 'WorkflowEdit',
+    params: { id: workflow.id },
+    query: { type: selectedCategory.value, mode: 'view' }
+  })
+}
+
+// Edit workflow
 const editWorkflow = (workflowId) => {
   router.push({
     name: 'WorkflowEdit',
@@ -222,38 +196,29 @@ const editWorkflow = (workflowId) => {
   })
 }
 
-const duplicateWorkflow = (workflow) => {
-  duplicateWorkflowData.value = workflow
-  newWorkflowName.value = `${workflow.name} (Copy)`
-  duplicateDrawerVisible.value = true
+// Open delete confirmation dialog
+const confirmDeleteWorkflow = (workflow) => {
+  workflowToDelete.value = workflow
+  deleteDialogVisible.value = true
 }
 
-const closeDuplicateDrawer = () => {
-  duplicateDrawerVisible.value = false
-  duplicateWorkflowData.value = null
-  newWorkflowName.value = ''
+// Close delete dialog
+const closeDeleteDialog = () => {
+  deleteDialogVisible.value = false
+  workflowToDelete.value = null
 }
 
-const confirmDuplicate = () => {
-  if (!newWorkflowName.value.trim()) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Validation Error',
-      detail: 'Please enter a workflow name',
-      life: 3000
-    })
-    return
-  }
-
-  // In a real application, this would create a new workflow
+// Delete workflow
+const deleteWorkflow = () => {
+  // In a real application, this would make an API call to delete the workflow
   toast.add({
     severity: 'success',
-    summary: 'Workflow Duplicated',
-    detail: `"${newWorkflowName.value}" has been created successfully`,
+    summary: 'Workflow Deleted',
+    detail: `"${workflowToDelete.value?.name}" has been deleted successfully`,
     life: 3000
   })
 
-  closeDuplicateDrawer()
+  closeDeleteDialog()
 }
 </script>
 
@@ -499,82 +464,46 @@ const confirmDuplicate = () => {
   color: var(--color-gray-900);
 }
 
-/* Duplicate Drawer Styles */
-.drawer-header h3 {
-  margin: 0 0 var(--spacing-1) 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-gray-900);
+/* Delete Dialog Styles */
+.delete-dialog-content {
+  text-align: center;
+  padding: var(--spacing-3) 0;
 }
 
-.drawer-subtitle {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-gray-600);
-  line-height: 1.4;
-}
-
-.drawer-content {
-  padding: var(--spacing-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-5);
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.form-label {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--color-gray-700);
-}
-
-.form-hint {
-  color: var(--color-gray-600);
-  font-size: 12px;
-  margin-top: var(--spacing-1);
-}
-
-.original-workflow-info {
+.delete-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  background-color: #fee2e2;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  background-color: #f9fafb;
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-md);
+  justify-content: center;
+  margin: 0 auto var(--spacing-4);
 }
 
-.workflow-icon {
-  font-size: 24px;
-  color: var(--color-primary-600);
-  flex-shrink: 0;
+.delete-icon-wrapper .pi {
+  font-size: 28px;
+  color: #dc2626;
 }
 
-.workflow-details {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-  flex: 1;
-}
-
-.workflow-name {
-  margin: 0;
-  font-weight: 600;
-  font-size: 14px;
+.delete-message {
+  font-size: 15px;
   color: var(--color-gray-900);
+  margin: 0 0 var(--spacing-2) 0;
+  line-height: 1.5;
 }
 
-.drawer-footer {
+.delete-warning {
+  font-size: 13px;
+  color: var(--color-gray-600);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  border-top: 1px solid var(--color-divider);
+  gap: var(--spacing-2);
 }
 
 .w-full {

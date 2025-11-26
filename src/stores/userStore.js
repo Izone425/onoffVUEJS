@@ -227,7 +227,7 @@ export const useUserStore = defineStore('user', () => {
 
     if (canRead('workflow')) {
       items.push({
-        label: 'Workflow Builder',
+        label: 'Workflow',
         path: '/configuration/workflow',
         icon: 'pi-sitemap',
         permission: 'workflow'

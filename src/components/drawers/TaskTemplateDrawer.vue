@@ -174,6 +174,12 @@
         :viewMode="isViewMode"
       />
 
+      <!-- Assigned Person in Charge (PIC) based on project -->
+      <AssignedPICConfig
+        v-model:selectedPIC="assignedPIC"
+        :viewMode="isViewMode"
+      />
+
       <!-- Active Status -->
       <div class="form-section">
         <div class="field-group">
@@ -218,6 +224,7 @@ import SystemAccessConfig from './config/SystemAccessConfig.vue'
 import AssetConfig from './config/AssetConfig.vue'
 import QuestionnaireConfig from './config/QuestionnaireConfig.vue'
 import ChecklistConfig from './config/ChecklistConfig.vue'
+import AssignedPICConfig from './config/AssignedPICConfig.vue'
 import { taskTemplates } from '../../data/mockData'
 
 const props = defineProps({
@@ -270,6 +277,7 @@ const systemAccesses = ref([])
 const assetItems = ref([])
 const questionnaireQuestions = ref([])
 const checklistItems = ref([])
+const assignedPIC = ref('')
 
 const taskTypeOptions = [
   { label: 'General Task', value: 'general' },
@@ -337,7 +345,8 @@ const handleSave = () => {
       systemAccesses: systemAccesses.value,
       assetItems: assetItems.value,
       questionnaireQuestions: questionnaireQuestions.value,
-      checklistItems: checklistItems.value
+      checklistItems: checklistItems.value,
+      assignedPIC: assignedPIC.value
     })
     saving.value = false
     handleClose()
@@ -363,6 +372,7 @@ const resetForm = () => {
   assetItems.value = []
   questionnaireQuestions.value = []
   checklistItems.value = []
+  assignedPIC.value = ''
 }
 
 watch(() => props.editingTemplate, (template) => {
@@ -382,6 +392,9 @@ watch(() => props.editingTemplate, (template) => {
 
     // Populate type-specific data based on template type
     populateTypeSpecificData(template)
+
+    // Populate assigned PIC
+    populateAssignedPIC(template)
   } else {
     // Reset form when creating new template
     resetForm()
@@ -399,6 +412,7 @@ const clearAllTypeSpecificStates = () => {
   assetItems.value = []
   questionnaireQuestions.value = []
   checklistItems.value = []
+  assignedPIC.value = ''
 }
 
 // Populate type-specific data based on template
@@ -772,6 +786,53 @@ const populateChecklistData = (template) => {
           pic: 'Department Manager'
         }
       ]
+    }
+  }
+}
+
+// Populate assigned PIC data
+const populateAssignedPIC = (template) => {
+  if (template.assignedPIC) {
+    assignedPIC.value = template.assignedPIC
+  } else if (template.ownerRole) {
+    // Map ownerRole to PIC value if available
+    const ownerRoleMap = {
+      'HR': 'dept-hr',
+      'HR Admin': 'emp-hr-admin',
+      'Human Resources': 'dept-hr',
+      'IT': 'dept-it',
+      'IT Admin': 'emp-it-admin',
+      'Information Technology': 'dept-it',
+      'Finance': 'dept-finance',
+      'Finance Admin': 'emp-finance-admin',
+      'Operations': 'dept-operations',
+      'Manager': 'desig-manager',
+      'Supervisor': 'desig-supervisor',
+      'Department Manager': 'desig-manager'
+    }
+    assignedPIC.value = ownerRoleMap[template.ownerRole] || ''
+  } else {
+    // Provide mock data based on template category/type for demo
+    if (template.indicator === 'onboarding') {
+      if (template.type === 'document' || template.type === 'information') {
+        assignedPIC.value = 'dept-hr'
+      } else if (template.type === 'system' || template.type === 'system_access') {
+        assignedPIC.value = 'dept-it'
+      } else if (template.type === 'asset') {
+        assignedPIC.value = 'emp-it-admin'
+      } else {
+        assignedPIC.value = 'desig-manager'
+      }
+    } else if (template.indicator === 'offboarding') {
+      if (template.type === 'checklist') {
+        assignedPIC.value = 'dept-it'
+      } else if (template.type === 'questionnaire') {
+        assignedPIC.value = 'dept-hr'
+      } else {
+        assignedPIC.value = 'desig-manager'
+      }
+    } else {
+      assignedPIC.value = ''
     }
   }
 }
