@@ -163,8 +163,8 @@ export const taskTemplates = [
   },
   {
     id: 2,
-    name: 'Read Employee Handbook',
-    description: 'Review and acknowledge employee handbook',
+    name: 'Compulsory Document',
+    description: 'Review and acknowledge compulsory documents',
     type: 'document',
     indicator: 'onboarding',
     ownerRole: 'Staff',

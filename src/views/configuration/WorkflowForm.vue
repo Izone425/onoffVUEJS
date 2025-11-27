@@ -779,7 +779,7 @@ const loadWorkflowData = (workflowId) => {
       {
         id: 'task-5',
         phase: 'next-day-onboarding',
-        task: 2, // Read Employee Handbook
+        task: 2, // Compulsory Document
         assignee: 'hr_admin',
         trigger: 'date_offset',
         triggerLabel: '1 days after Hire Date'
@@ -790,7 +790,7 @@ const loadWorkflowData = (workflowId) => {
         task: 6, // Security & Compliance Quiz
         assignee: 'hr_coordinator',
         trigger: 'previous_task',
-        triggerLabel: 'After "Read Employee Handbook" is completed'
+        triggerLabel: 'After "Compulsory Document" is completed'
       }
     ]
   } else {

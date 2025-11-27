@@ -908,6 +908,45 @@
           </div>
         </div>
 
+        <!-- Required Items Section (for Document type tasks) -->
+        <div v-if="selectedTaskForDetails.requiredItems && selectedTaskForDetails.requiredItems.length > 0" class="required-items-section">
+          <div class="required-items-header">
+            <i class="pi pi-file-check"></i>
+            <span>Required Items</span>
+            <Tag
+              :value="`${getCompletedItemsCount(selectedTaskForDetails)  }/${selectedTaskForDetails.requiredItems.length}`"
+              :severity="getCompletedItemsCount(selectedTaskForDetails) === selectedTaskForDetails.requiredItems.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="required-items-list">
+            <div
+              v-for="(item, index) in selectedTaskForDetails.requiredItems"
+              :key="index"
+              class="required-item"
+              :class="{ 'item-completed': item.completed }"
+            >
+              <Checkbox
+                v-model="item.completed"
+                :inputId="`item-${selectedTaskForDetails.id}-${index}`"
+                :binary="true"
+                @change="updateTaskProgress(selectedTaskForDetails)"
+              />
+              <label :for="`item-${selectedTaskForDetails.id}-${index}`" class="item-label">
+                {{ item.name }}
+              </label>
+              <i v-if="item.completed" class="pi pi-check-circle item-check-icon"></i>
+            </div>
+          </div>
+          <div class="required-items-progress">
+            <ProgressBar
+              :value="getItemsProgressPercentage(selectedTaskForDetails)"
+              :showValue="false"
+              style="height: 6px;"
+            />
+            <span class="progress-text">{{ getItemsProgressPercentage(selectedTaskForDetails) }}% completed</span>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="task-actions-section">
           <Button
@@ -1210,11 +1249,37 @@ const allTasks = ref([
   { id: 2, task: 'Grant Email & HRMS Access', assignee: 'Harith Rahman', due: '2025-09-24', type: 'System/Access', indicator: 'Onboarding', status: 'overdue', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Create corporate email account and grant access to HRMS system.\n\nSteps:\n1. Create email account following naming convention\n2. Set up email signature template\n3. Add to relevant distribution lists\n4. Create HRMS account with appropriate role permissions\n5. Send credentials via secure channel to employee' },
   { id: 3, task: 'Day 1 Orientation', assignee: 'Nur Iman', due: '2025-10-01', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Manager', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct the Day 1 orientation session covering:\n\n• Company history and culture\n• Organizational structure\n• Team introductions\n• Office tour\n• Safety and emergency procedures\n• Q&A session\n\nDuration: 2-3 hours. Location: Conference Room A.' },
   { id: 4, task: 'Setup Workstation', assignee: 'Harith Rahman', due: '2025-09-23', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Prepare the employee workstation before their first day:\n\n• Assign desk location\n• Setup computer with required software\n• Configure network access\n• Install necessary development tools\n• Test all equipment functionality\n• Place welcome note on desk' },
-  { id: 5, task: 'Employee Information & Document Collection', assignee: 'Aina Zulkifli', due: '2025-09-17', type: 'Document', indicator: 'Onboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Collect and verify the following documents from the new employee:\n\n• Copy of IC/Passport\n• Educational certificates\n• Previous employment letters\n• Emergency contact information\n• Bank account details for payroll\n• Tax forms (LHDN)\n\nAll documents should be uploaded to the employee\'s digital file.' },
-  { id: 6, task: 'Payroll & Banking Information Setup', assignee: 'Aina Zulkifli', due: '2025-09-18', type: 'Information', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Complete payroll setup for the new employee:\n\n1. Verify bank account details\n2. Set up in payroll system\n3. Configure tax deductions (PCB)\n4. Set up EPF and SOCSO contributions\n5. Process any allowances or benefits\n\nEnsure all information is accurate before the first pay cycle.' },
-  { id: 7, task: 'Verify Identity Documents', assignee: 'Harith Rahman', due: '2025-09-25', type: 'Information/Document', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Verify all submitted identity documents for authenticity:\n\n• Check IC/Passport validity\n• Verify educational qualifications\n• Cross-reference employment history\n• Complete background verification checklist\n\nFlag any discrepancies to HR immediately.' },
-  { id: 8, task: 'Process Employment Forms', assignee: 'Nur Iman', due: '2025-10-02', type: 'Information/Document', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Process all employment-related forms:\n\n• Employment contract (signed copy)\n• NDA and confidentiality agreement\n• Company policy acknowledgment\n• Benefits enrollment forms\n• Emergency contact form\n\nEnsure all forms are completed, signed, and filed properly.' },
-  { id: 9, task: 'Employee Feedback Survey', assignee: 'Aina Zulkifli', due: '2025-09-23', type: 'Questionnaire', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Send and collect the 7-day onboarding feedback survey:\n\n• Overall onboarding experience rating\n• Quality of orientation sessions\n• Workstation and equipment satisfaction\n• Team integration feedback\n• Suggestions for improvement\n\nAnalyze responses and share insights with the onboarding team.' },
+  { id: 5, task: 'Compulsory Document', assignee: 'Aina Zulkifli', due: '2025-09-17', type: 'Document', indicator: 'Onboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Review and acknowledge compulsory documents.', requiredItems: [
+    { name: 'IC (Identity Card)', completed: true, isCompulsory: true },
+    { name: 'Passport', completed: true, isCompulsory: false }
+  ] },
+  { id: 6, task: 'Payroll & Banking Information Setup', assignee: 'Aina Zulkifli', due: '2025-09-18', type: 'Information', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Complete payroll setup for the new employee. Ensure all information is accurate before the first pay cycle.', requiredItems: [
+    { name: 'Verify bank account details', completed: true },
+    { name: 'Set up in payroll system', completed: true },
+    { name: 'Configure tax deductions (PCB)', completed: false },
+    { name: 'Set up EPF and SOCSO contributions', completed: false },
+    { name: 'Process any allowances or benefits', completed: false }
+  ] },
+  { id: 7, task: 'Verify Identity Documents', assignee: 'Harith Rahman', due: '2025-09-25', type: 'Information/Document', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Verify all submitted identity documents for authenticity. Flag any discrepancies to HR immediately.', requiredItems: [
+    { name: 'Check IC/Passport validity', completed: true },
+    { name: 'Verify educational qualifications', completed: false },
+    { name: 'Cross-reference employment history', completed: false },
+    { name: 'Complete background verification checklist', completed: false }
+  ] },
+  { id: 8, task: 'Process Employment Forms', assignee: 'Nur Iman', due: '2025-10-02', type: 'Information/Document', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Process all employment-related forms. Ensure all forms are completed, signed, and filed properly.', requiredItems: [
+    { name: 'Employment contract (signed copy)', completed: false },
+    { name: 'NDA and confidentiality agreement', completed: false },
+    { name: 'Company policy acknowledgment', completed: false },
+    { name: 'Benefits enrollment forms', completed: false },
+    { name: 'Emergency contact form', completed: false }
+  ] },
+  { id: 9, task: 'Employee Feedback Survey', assignee: 'Aina Zulkifli', due: '2025-09-23', type: 'Questionnaire', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Send and collect the 7-day onboarding feedback survey. Analyze responses and share insights with the onboarding team.', requiredItems: [
+    { name: 'Overall onboarding experience rating', completed: false },
+    { name: 'Quality of orientation sessions', completed: false },
+    { name: 'Workstation and equipment satisfaction', completed: false },
+    { name: 'Team integration feedback', completed: false },
+    { name: 'Suggestions for improvement', completed: false }
+  ] },
   { id: 10, task: 'Office Tour & Badge Photo', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'General Task', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct office tour and take badge photo:\n\n• Tour all office areas and facilities\n• Introduce to key personnel\n• Show emergency exits and assembly points\n• Take professional photo for ID badge\n• Explain office etiquette and rules\n\nDuration: Approximately 45 minutes.' },
   { id: 11, task: 'Day 1 Orientation', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'Meeting/Event', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct comprehensive Day 1 orientation:\n\n• Welcome and introductions\n• Company overview presentation\n• HR policies and procedures\n• Benefits explanation\n• IT systems overview\n• Safety briefing\n\nProvide orientation materials and answer any questions.' },
   { id: 12, task: 'Grant Email & HRMS Access', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'System', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Set up and verify all system access on Day 1:\n\n• Activate email account\n• Verify HRMS login\n• Grant access to shared drives\n• Set up VPN if required\n• Configure software licenses\n\nProvide login credentials and basic training on system usage.' },
@@ -1265,7 +1330,7 @@ const onboardingWorkflows = ref([
 // Sample task templates
 const onboardingTaskTemplates = ref([
   { id: 'tt-1', name: 'Welcome Pack', type: 'General' },
-  { id: 'tt-2', name: 'Read Employee Handbook', type: 'Document' },
+  { id: 'tt-2', name: 'Compulsory Document', type: 'Document' },
   { id: 'tt-3', name: 'Day 1 Orientation', type: 'Meeting' },
   { id: 'tt-4', name: 'Grant Email & HRMS Access', type: 'System' },
   { id: 'tt-5', name: 'Issue Laptop & ID Card', type: 'Asset' },
@@ -1623,6 +1688,33 @@ const resetTask = (task) => {
     detail: `Task "${task.task}" has been reset to pending status`,
     life: 3000
   })
+}
+
+// Required Items helper functions
+const getCompletedItemsCount = (task) => {
+  if (!task.requiredItems || task.requiredItems.length === 0) return 0
+  return task.requiredItems.filter(item => item.completed).length
+}
+
+const getItemsProgressPercentage = (task) => {
+  if (!task.requiredItems || task.requiredItems.length === 0) return 0
+  const completed = getCompletedItemsCount(task)
+  return Math.round((completed / task.requiredItems.length) * 100)
+}
+
+const updateTaskProgress = (task) => {
+  // Auto-complete task if all required items are checked
+  if (task.requiredItems && task.requiredItems.length > 0) {
+    const allCompleted = task.requiredItems.every(item => item.completed)
+    if (allCompleted && task.status !== 'completed') {
+      toast.add({
+        severity: 'info',
+        summary: 'All Items Completed',
+        detail: 'All required items have been checked. You can now mark this task as complete.',
+        life: 4000
+      })
+    }
+  }
 }
 </script>
 
@@ -2519,6 +2611,98 @@ const resetTask = (task) => {
 .description-content .no-description {
   color: var(--color-gray-400);
   font-style: italic;
+}
+
+/* Required Items Section */
+.required-items-section {
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.required-items-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.required-items-header i {
+  color: var(--color-primary-600);
+}
+
+.required-items-header span {
+  flex: 1;
+}
+
+.required-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.required-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.required-item:hover {
+  border-color: var(--color-primary-300);
+  background: var(--color-primary-50);
+}
+
+.required-item.item-completed {
+  background: var(--color-success-50);
+  border-color: var(--color-success-200);
+}
+
+.required-item.item-completed .item-label {
+  text-decoration: line-through;
+  color: var(--color-gray-500);
+}
+
+.item-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  cursor: pointer;
+}
+
+.item-check-icon {
+  color: var(--color-success-600);
+  font-size: 14px;
+}
+
+.required-items-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-divider);
+}
+
+.required-items-progress .progress-text {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  white-space: nowrap;
+}
+
+.required-items-progress :deep(.p-progressbar) {
+  flex: 1;
 }
 
 /* Task Actions Section */
