@@ -914,7 +914,7 @@
             <i class="pi pi-file-check"></i>
             <span>Required Items</span>
             <Tag
-              :value="`${getCompletedItemsCount(selectedTaskForDetails)  }/${selectedTaskForDetails.requiredItems.length}`"
+              :value="`${getCompletedItemsCount(selectedTaskForDetails)}/${selectedTaskForDetails.requiredItems.length}`"
               :severity="getCompletedItemsCount(selectedTaskForDetails) === selectedTaskForDetails.requiredItems.length ? 'success' : 'warning'"
             />
           </div>
@@ -922,28 +922,82 @@
             <div
               v-for="(item, index) in selectedTaskForDetails.requiredItems"
               :key="index"
-              class="required-item"
-              :class="{ 'item-completed': item.completed }"
+              class="required-item-card"
+              :class="{ 'item-completed': item.completed, 'item-compulsory': item.isCompulsory }"
             >
-              <Checkbox
-                v-model="item.completed"
-                :inputId="`item-${selectedTaskForDetails.id}-${index}`"
-                :binary="true"
-                @change="updateTaskProgress(selectedTaskForDetails)"
-              />
-              <label :for="`item-${selectedTaskForDetails.id}-${index}`" class="item-label">
-                {{ item.name }}
-              </label>
-              <i v-if="item.completed" class="pi pi-check-circle item-check-icon"></i>
+              <div class="item-header">
+                <span class="item-label">{{ item.name }}</span>
+                <div class="item-badges">
+                  <Tag
+                    :value="item.isCompulsory ? 'Compulsory' : 'Optional'"
+                    :severity="item.isCompulsory ? 'danger' : 'secondary'"
+                    class="compulsory-tag"
+                  />
+                  <i v-if="item.completed" class="pi pi-check-circle item-check-icon"></i>
+                </div>
+              </div>
+              <!-- Uploaded File Section (visible for HR Admin) -->
+              <div v-if="item.uploadedFile" class="uploaded-file-section">
+                <div class="file-preview">
+                  <div class="file-icon-wrapper">
+                    <i :class="['pi', getFileIcon(item.uploadedFile.type)]"></i>
+                  </div>
+                  <div class="file-info">
+                    <span class="file-name">{{ item.uploadedFile.name }}</span>
+                    <span class="file-meta">
+                      {{ item.uploadedFile.size }} • Uploaded {{ item.uploadedFile.uploadedAt }}
+                    </span>
+                  </div>
+                  <div class="file-actions">
+                    <Button
+                      icon="pi pi-eye"
+                      severity="secondary"
+                      text
+                      size="small"
+                      title="Preview"
+                      @click="previewFile(item.uploadedFile)"
+                    />
+                    <Button
+                      icon="pi pi-download"
+                      severity="secondary"
+                      text
+                      size="small"
+                      title="Download"
+                      @click="downloadFile(item.uploadedFile)"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- No File Uploaded -->
+              <div v-else class="no-file-section">
+                <i class="pi pi-inbox"></i>
+                <span>No file uploaded yet</span>
+              </div>
             </div>
           </div>
-          <div class="required-items-progress">
-            <ProgressBar
-              :value="getItemsProgressPercentage(selectedTaskForDetails)"
-              :showValue="false"
-              style="height: 6px;"
+        </div>
+
+        <!-- Filled Information Section (for Information type tasks) -->
+        <div v-if="selectedTaskForDetails.filledInfo && selectedTaskForDetails.filledInfo.length > 0" class="filled-info-section">
+          <div class="filled-info-header">
+            <i class="pi pi-list"></i>
+            <span>Filled Information</span>
+            <Tag
+              :value="`${getFilledInfoCount(selectedTaskForDetails)}/${selectedTaskForDetails.filledInfo.length}`"
+              :severity="getFilledInfoCount(selectedTaskForDetails) === selectedTaskForDetails.filledInfo.length ? 'success' : 'warning'"
             />
-            <span class="progress-text">{{ getItemsProgressPercentage(selectedTaskForDetails) }}% completed</span>
+          </div>
+          <div class="filled-info-list">
+            <div
+              v-for="(info, index) in selectedTaskForDetails.filledInfo"
+              :key="index"
+              class="filled-info-item"
+              :class="{ 'info-filled': info.value }"
+            >
+              <div class="info-field-label">{{ info.label }}</div>
+              <div v-if="info.value" class="info-field-value">{{ info.value }}</div>
+              <div v-else class="info-field-empty">Not provided</div>
+            </div>
           </div>
         </div>
 
@@ -1250,15 +1304,16 @@ const allTasks = ref([
   { id: 3, task: 'Day 1 Orientation', assignee: 'Nur Iman', due: '2025-10-01', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Manager', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct the Day 1 orientation session covering:\n\n• Company history and culture\n• Organizational structure\n• Team introductions\n• Office tour\n• Safety and emergency procedures\n• Q&A session\n\nDuration: 2-3 hours. Location: Conference Room A.' },
   { id: 4, task: 'Setup Workstation', assignee: 'Harith Rahman', due: '2025-09-23', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Prepare the employee workstation before their first day:\n\n• Assign desk location\n• Setup computer with required software\n• Configure network access\n• Install necessary development tools\n• Test all equipment functionality\n• Place welcome note on desk' },
   { id: 5, task: 'Compulsory Document', assignee: 'Aina Zulkifli', due: '2025-09-17', type: 'Document', indicator: 'Onboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Review and acknowledge compulsory documents.', requiredItems: [
-    { name: 'IC (Identity Card)', completed: true, isCompulsory: true },
-    { name: 'Passport', completed: true, isCompulsory: false }
+    { name: 'IC (Identity Card)', completed: true, isCompulsory: true, uploadedFile: { name: 'IC_Aina_Zulkifli.pdf', type: 'pdf', size: '1.2 MB', uploadedAt: '2025-09-15', uploadedBy: 'Aina Zulkifli' } },
+    { name: 'Passport', completed: true, isCompulsory: false, uploadedFile: { name: 'Passport_Aina_Zulkifli.pdf', type: 'pdf', size: '2.4 MB', uploadedAt: '2025-09-15', uploadedBy: 'Aina Zulkifli' } }
   ] },
-  { id: 6, task: 'Payroll & Banking Information Setup', assignee: 'Aina Zulkifli', due: '2025-09-18', type: 'Information', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Complete payroll setup for the new employee. Ensure all information is accurate before the first pay cycle.', requiredItems: [
-    { name: 'Verify bank account details', completed: true },
-    { name: 'Set up in payroll system', completed: true },
-    { name: 'Configure tax deductions (PCB)', completed: false },
-    { name: 'Set up EPF and SOCSO contributions', completed: false },
-    { name: 'Process any allowances or benefits', completed: false }
+  { id: 6, task: 'Payroll & Banking Information Setup', assignee: 'Aina Zulkifli', due: '2025-09-18', type: 'Information', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Complete payroll setup for the new employee. Ensure all information is accurate before the first pay cycle.', filledInfo: [
+    { label: 'Bank Name', value: 'Maybank' },
+    { label: 'Bank Account Number', value: '1234-5678-9012' },
+    { label: 'Account Holder Name', value: 'Aina Zulkifli' },
+    { label: 'Tax Identification Number (TIN)', value: 'TIN-12345678' },
+    { label: 'EPF Number', value: '' },
+    { label: 'SOCSO Number', value: '' }
   ] },
   { id: 7, task: 'Verify Identity Documents', assignee: 'Harith Rahman', due: '2025-09-25', type: 'Information/Document', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Verify all submitted identity documents for authenticity. Flag any discrepancies to HR immediately.', requiredItems: [
     { name: 'Check IC/Passport validity', completed: true },
@@ -1715,6 +1770,49 @@ const updateTaskProgress = (task) => {
       })
     }
   }
+}
+
+// File helper functions
+const getFileIcon = (fileType) => {
+  const iconMap = {
+    'pdf': 'pi-file-pdf',
+    'image': 'pi-image',
+    'doc': 'pi-file-word',
+    'docx': 'pi-file-word',
+    'xls': 'pi-file-excel',
+    'xlsx': 'pi-file-excel',
+    'jpg': 'pi-image',
+    'jpeg': 'pi-image',
+    'png': 'pi-image',
+    'default': 'pi-file'
+  }
+  return iconMap[fileType] || iconMap['default']
+}
+
+const previewFile = (file) => {
+  toast.add({
+    severity: 'info',
+    summary: 'Preview File',
+    detail: `Opening preview for ${file.name}`,
+    life: 3000
+  })
+  // In real implementation, this would open a file preview modal
+}
+
+const downloadFile = (file) => {
+  toast.add({
+    severity: 'success',
+    summary: 'Download Started',
+    detail: `Downloading ${file.name}`,
+    life: 3000
+  })
+  // In real implementation, this would trigger file download
+}
+
+// Filled Information helper functions
+const getFilledInfoCount = (task) => {
+  if (!task.filledInfo || task.filledInfo.length === 0) return 0
+  return task.filledInfo.filter(info => info.value).length
 }
 </script>
 
@@ -2645,46 +2743,138 @@ const updateTaskProgress = (task) => {
 .required-items-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
-.required-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+/* Required Item Card - New Design */
+.required-item-card {
   background: var(--color-bg);
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  overflow: hidden;
   transition: all 0.2s ease;
 }
 
-.required-item:hover {
+.required-item-card:hover {
   border-color: var(--color-primary-300);
-  background: var(--color-primary-50);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.required-item.item-completed {
-  background: var(--color-success-50);
-  border-color: var(--color-success-200);
+.required-item-card.item-completed {
+  border-color: var(--color-success-300);
 }
 
-.required-item.item-completed .item-label {
-  text-decoration: line-through;
-  color: var(--color-gray-500);
+.required-item-card.item-compulsory {
+  border-left: 3px solid var(--color-danger-500);
+}
+
+.required-item-card.item-compulsory.item-completed {
+  border-left-color: var(--color-success-500);
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-bg);
+}
+
+.item-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compulsory-tag {
+  font-size: 11px;
 }
 
 .item-label {
   flex: 1;
   font-size: 13px;
+  font-weight: 500;
   color: var(--color-gray-700);
-  cursor: pointer;
+}
+
+.required-item-card.item-completed .item-label {
+  color: var(--color-gray-500);
 }
 
 .item-check-icon {
   color: var(--color-success-600);
-  font-size: 14px;
+  font-size: 16px;
+}
+
+/* Uploaded File Section */
+.uploaded-file-section {
+  padding: 0.75rem;
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-sm);
+}
+
+.file-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-100);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-600);
+  font-size: 18px;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.file-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* No File Uploaded */
+.no-file-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--color-gray-400);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.no-file-section i {
+  font-size: 16px;
 }
 
 .required-items-progress {
@@ -2703,6 +2893,79 @@ const updateTaskProgress = (task) => {
 
 .required-items-progress :deep(.p-progressbar) {
   flex: 1;
+}
+
+/* Filled Information Section */
+.filled-info-section {
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filled-info-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.filled-info-header i {
+  color: var(--color-primary-600);
+}
+
+.filled-info-header span {
+  flex: 1;
+}
+
+.filled-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filled-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.filled-info-item:hover {
+  border-color: var(--color-primary-300);
+}
+
+.filled-info-item.info-filled {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.info-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.info-field-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  text-align: right;
+}
+
+.info-field-empty {
+  font-size: 12px;
+  color: var(--color-gray-400);
+  font-style: italic;
 }
 
 /* Task Actions Section */

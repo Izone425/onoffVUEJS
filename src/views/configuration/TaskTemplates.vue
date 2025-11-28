@@ -398,7 +398,7 @@ const handleSaveTemplate = (templateData) => {
 
 <style scoped>
 .page-container {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
 }
 

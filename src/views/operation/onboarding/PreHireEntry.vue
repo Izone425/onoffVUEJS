@@ -10,24 +10,19 @@
 
       <div class="content-card">
         <DataTable :value="preHires" responsiveLayout="scroll" stripedRows class="compact-table">
-          <Column field="name" header="Candidate" style="width: 200px">
+          <Column field="name" header="Employee" style="width: 200px">
             <template #body="{ data }">
-              <div class="candidate-name">
-                <div class="candidate-avatar">{{ getInitials(data.name) }}</div>
-                <div class="candidate-info">
-                  <div class="candidate-name-text">{{ data.name }}</div>
-                  <div class="candidate-meta">{{ data.position }}</div>
+              <div class="employee-name">
+                <div class="employee-avatar">{{ getInitials(data.name) }}</div>
+                <div class="employee-info">
+                  <div class="employee-name-text">{{ data.name }}</div>
                 </div>
               </div>
             </template>
           </Column>
-          <Column field="department" header="Dept" style="width: 100px"></Column>
+          <Column field="position" header="Designation" style="width: 150px"></Column>
+          <Column field="department" header="Department" style="width: 130px"></Column>
           <Column field="startDate" header="Start Date" style="width: 110px"></Column>
-          <Column field="emailStatus" header="Status" style="width: 120px">
-            <template #body="{ data }">
-              <StatusChip :status="data.emailStatus" />
-            </template>
-          </Column>
           <Column header="Workflow" style="width: 220px">
             <template #body="{ data }">
               <Dropdown
@@ -75,43 +70,52 @@
       </div>
     </div>
 
-    <!-- Create User Modal -->
-    <Dialog v-model:visible="showCreateUserModal" header="Create User Account" :modal="true" style="width: 600px">
-      <div class="form-container">
-        <div class="form-field">
-          <label class="form-label">Full Name <span class="required">*</span></label>
-          <InputText v-model="newUser.fullName" class="w-full" />
+    <!-- Create User Drawer -->
+    <Sidebar v-model:visible="showCreateUserDrawer" position="right" class="create-user-drawer">
+      <template #header>
+        <div class="drawer-header">
+          <h2 class="drawer-title">Create User Account</h2>
         </div>
-        <div class="form-field">
-          <label class="form-label">Personal Email <span class="required">*</span></label>
-          <InputText v-model="newUser.personalEmail" type="email" class="w-full" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Temporary ID <span class="required">*</span></label>
-          <InputText v-model="newUser.temporaryId" class="w-full" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Hire Date <span class="required">*</span></label>
-          <Calendar v-model="newUser.hireDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Manager <span class="required">*</span></label>
-          <Dropdown v-model="newUser.manager" :options="managers" optionLabel="name" placeholder="Select manager" class="w-full" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Location <span class="required">*</span></label>
-          <InputText v-model="newUser.location" class="w-full" placeholder="e.g., HQ" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Work Type <span class="required">*</span></label>
-          <Dropdown v-model="newUser.workType" :options="workTypes" placeholder="Select work type" class="w-full" />
+      </template>
+
+      <div class="drawer-content">
+        <div class="form-container">
+          <div class="form-field">
+            <label class="form-label">Full Name <span class="required">*</span></label>
+            <InputText v-model="newUser.fullName" class="w-full" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Personal Email <span class="required">*</span></label>
+            <InputText v-model="newUser.personalEmail" type="email" class="w-full" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Temporary ID <span class="required">*</span></label>
+            <InputText v-model="newUser.temporaryId" class="w-full" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Hire Date <span class="required">*</span></label>
+            <Calendar v-model="newUser.hireDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Manager <span class="required">*</span></label>
+            <Dropdown v-model="newUser.manager" :options="managers" optionLabel="name" placeholder="Select manager" class="w-full" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Location <span class="required">*</span></label>
+            <InputText v-model="newUser.location" class="w-full" placeholder="e.g., HQ" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Work Type <span class="required">*</span></label>
+            <Dropdown v-model="newUser.workType" :options="workTypes" placeholder="Select work type" class="w-full" />
+          </div>
         </div>
       </div>
-      <template #footer>
-        <Button label="Cancel" severity="secondary" @click="showCreateUserModal = false" outlined />
+
+      <div class="drawer-footer">
+        <Button label="Cancel" severity="secondary" @click="showCreateUserDrawer = false" outlined />
         <Button label="Create & Start Onboarding" @click="submitCreateUser" />
-      </template>
-    </Dialog>
+      </div>
+    </Sidebar>
   </template>
 
 <script setup>
@@ -121,14 +125,13 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
-import Dialog from 'primevue/dialog'
+import Sidebar from 'primevue/sidebar'
 import InputText from 'primevue/inputtext'
 import Calendar from 'primevue/calendar'
-import StatusChip from '../../../components/ui/StatusChip.vue'
 import { preHires, workflows, appraisalTemplates, users } from '../../../data/mockData'
 
 const toast = useToast()
-const showCreateUserModal = ref(false)
+const showCreateUserDrawer = ref(false)
 const selectedCandidate = ref(null)
 
 const onboardingWorkflows = workflows.filter(w => w.category === 'onboarding')
@@ -154,7 +157,7 @@ const createUser = (candidate) => {
   newUser.value.fullName = candidate.name
   newUser.value.personalEmail = candidate.personalEmail
   newUser.value.hireDate = new Date(candidate.startDate)
-  showCreateUserModal.value = true
+  showCreateUserDrawer.value = true
 }
 
 const viewCandidate = (candidate) => {
@@ -169,7 +172,7 @@ const submitCreateUser = () => {
     detail: `User account created for ${newUser.value.fullName}`,
     life: 3000
   })
-  showCreateUserModal.value = false
+  showCreateUserDrawer.value = false
 }
 </script>
 
@@ -199,20 +202,20 @@ const submitCreateUser = () => {
   overflow: auto;
 }
 
-.candidate-name {
+.employee-name {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
 }
 
-.candidate-info {
+.employee-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.candidate-name-text {
+.employee-name-text {
   font-weight: 500;
   font-size: 13px;
   white-space: nowrap;
@@ -220,15 +223,7 @@ const submitCreateUser = () => {
   text-overflow: ellipsis;
 }
 
-.candidate-meta {
-  font-size: 11px;
-  color: var(--color-gray-500);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.candidate-avatar {
+.employee-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -298,5 +293,38 @@ const submitCreateUser = () => {
 
 .w-full {
   width: 100%;
+}
+
+/* Drawer Styles */
+.create-user-drawer {
+  width: 500px !important;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-3) 0;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-divider);
+  margin-top: auto;
 }
 </style>
