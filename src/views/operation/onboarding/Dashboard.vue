@@ -1001,6 +1001,174 @@
           </div>
         </div>
 
+        <!-- System Access Section (for System type tasks) -->
+        <div v-if="selectedTaskForDetails.systemAccess && selectedTaskForDetails.systemAccess.length > 0" class="system-access-section">
+          <div class="system-access-header">
+            <i class="pi pi-cog"></i>
+            <span>System & Application Access</span>
+            <Tag
+              :value="`${getGrantedSystemsCount(selectedTaskForDetails)}/${selectedTaskForDetails.systemAccess.length}`"
+              :severity="getGrantedSystemsCount(selectedTaskForDetails) === selectedTaskForDetails.systemAccess.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="system-access-list">
+            <div
+              v-for="(system, index) in selectedTaskForDetails.systemAccess"
+              :key="index"
+              class="system-access-card"
+              :class="{ 'system-granted': system.granted }"
+            >
+              <div class="system-card-header">
+                <div class="system-info">
+                  <span class="system-number">#{{ index + 1 }}</span>
+                  <span class="system-name">{{ system.name }}</span>
+                </div>
+                <div class="system-status-badge">
+                  <Tag
+                    :value="system.granted ? 'Granted' : 'Pending'"
+                    :severity="system.granted ? 'success' : 'warning'"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div v-if="system.description" class="system-description">
+                {{ system.description }}
+              </div>
+              <div class="system-details">
+                <div class="system-detail-item">
+                  <i class="pi pi-user"></i>
+                  <span>PIC: <strong>{{ system.pic }}</strong></span>
+                </div>
+                <div v-if="system.grantedAt" class="system-detail-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>Granted: {{ system.grantedAt }}</span>
+                </div>
+                <div v-if="system.credentials" class="system-credentials">
+                  <div class="credentials-header">
+                    <i class="pi pi-key"></i>
+                    <span>Access Credentials</span>
+                  </div>
+                  <div class="credentials-content">
+                    <div v-if="system.credentials.username" class="credential-item">
+                      <span class="credential-label">Username:</span>
+                      <span class="credential-value">{{ system.credentials.username }}</span>
+                    </div>
+                    <div v-if="system.credentials.email" class="credential-item">
+                      <span class="credential-label">Email:</span>
+                      <span class="credential-value">{{ system.credentials.email }}</span>
+                    </div>
+                    <div v-if="system.credentials.password" class="credential-item">
+                      <span class="credential-label">Password:</span>
+                      <span class="credential-value">{{ system.credentials.password }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Asset Details Section (for Asset type tasks) -->
+        <div v-if="selectedTaskForDetails.assetItems && selectedTaskForDetails.assetItems.length > 0" class="asset-details-section">
+          <div class="asset-details-header">
+            <i class="pi pi-box"></i>
+            <span>Asset Details</span>
+            <Tag
+              :value="`${getIssuedAssetsCount(selectedTaskForDetails)}/${selectedTaskForDetails.assetItems.length}`"
+              :severity="getIssuedAssetsCount(selectedTaskForDetails) === selectedTaskForDetails.assetItems.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="asset-details-list">
+            <div
+              v-for="(asset, index) in selectedTaskForDetails.assetItems"
+              :key="index"
+              class="asset-item-card"
+              :class="{ 'asset-issued': asset.issued }"
+            >
+              <div class="asset-card-header">
+                <div class="asset-info">
+                  <span class="asset-number">#{{ index + 1 }}</span>
+                  <span class="asset-name">{{ asset.name }}</span>
+                </div>
+                <div class="asset-status-badge">
+                  <Tag
+                    :value="asset.issued ? 'Issued' : 'Pending'"
+                    :severity="asset.issued ? 'success' : 'warning'"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div v-if="asset.description" class="asset-description">
+                {{ asset.description }}
+              </div>
+              <div class="asset-details-content">
+                <div class="asset-detail-row">
+                  <div class="asset-detail-item">
+                    <i class="pi pi-user"></i>
+                    <span>PIC: <strong>{{ asset.pic }}</strong></span>
+                  </div>
+                  <div v-if="asset.issuedAt" class="asset-detail-item">
+                    <i class="pi pi-calendar"></i>
+                    <span>Issued: {{ asset.issuedAt }}</span>
+                  </div>
+                </div>
+                <div v-if="asset.serialNumber" class="asset-serial-section">
+                  <div class="serial-header">
+                    <i class="pi pi-tag"></i>
+                    <span>Serial Number</span>
+                  </div>
+                  <div class="serial-value">{{ asset.serialNumber }}</div>
+                </div>
+                <div v-if="asset.handoverLetter" class="asset-handover-section">
+                  <div class="handover-header">
+                    <i class="pi pi-file"></i>
+                    <span>Hand-over Letter</span>
+                    <Tag
+                      :value="asset.handoverLetter.signed ? 'Signed' : 'Uploaded'"
+                      :severity="asset.handoverLetter.signed ? 'success' : 'info'"
+                      class="handover-tag"
+                    />
+                  </div>
+                  <div class="handover-file">
+                    <div class="file-icon-wrapper orange">
+                      <i class="pi pi-file-pdf"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ asset.handoverLetter.fileName }}</span>
+                      <span class="file-meta">{{ asset.handoverLetter.uploadedAt }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button
+                        icon="pi pi-eye"
+                        severity="secondary"
+                        text
+                        size="small"
+                        title="Preview"
+                        @click="previewFile({ name: asset.handoverLetter.fileName })"
+                      />
+                      <Button
+                        icon="pi pi-download"
+                        severity="secondary"
+                        text
+                        size="small"
+                        title="Download"
+                        @click="downloadFile({ name: asset.handoverLetter.fileName })"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div v-if="asset.remarks" class="asset-remarks-section">
+                  <div class="remarks-header">
+                    <i class="pi pi-comment"></i>
+                    <span>Remarks</span>
+                  </div>
+                  <div class="remarks-content">{{ asset.remarks }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="task-actions-section">
           <Button
@@ -1337,8 +1505,15 @@ const allTasks = ref([
   ] },
   { id: 10, task: 'Office Tour & Badge Photo', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'General Task', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct office tour and take badge photo:\n\n• Tour all office areas and facilities\n• Introduce to key personnel\n• Show emergency exits and assembly points\n• Take professional photo for ID badge\n• Explain office etiquette and rules\n\nDuration: Approximately 45 minutes.' },
   { id: 11, task: 'Day 1 Orientation', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'Meeting/Event', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct comprehensive Day 1 orientation:\n\n• Welcome and introductions\n• Company overview presentation\n• HR policies and procedures\n• Benefits explanation\n• IT systems overview\n• Safety briefing\n\nProvide orientation materials and answer any questions.' },
-  { id: 12, task: 'Grant Email & HRMS Access', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'System', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Set up and verify all system access on Day 1:\n\n• Activate email account\n• Verify HRMS login\n• Grant access to shared drives\n• Set up VPN if required\n• Configure software licenses\n\nProvide login credentials and basic training on system usage.' },
-  { id: 13, task: 'Issue Laptop & ID Card', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Issue company assets to the new employee:\n\n• Laptop with all required software installed\n• Power adapter and accessories\n• ID card with access permissions\n• Asset acknowledgment form\n\nRecord all serial numbers and have employee sign asset receipt form.' },
+  { id: 12, task: 'Grant Email & HRMS Access', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'System', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Set up and verify all system access on Day 1:\n\n• Activate email account\n• Verify HRMS login\n• Grant access to shared drives\n• Set up VPN if required\n• Configure software licenses\n\nProvide login credentials and basic training on system usage.', systemAccess: [
+    { name: 'Corporate Email (Outlook)', description: 'Set up company email account with standard mailbox size and distribution lists', pic: 'IT Admin', granted: true, grantedAt: '2025-09-16', credentials: { email: 'aina.zulkifli@timetec.com', password: 'T1m3T3c@2025' } },
+    { name: 'HRMS Portal', description: 'Grant access to HR Management System for leave, claims, and employee self-service', pic: 'HR Admin', granted: true, grantedAt: '2025-09-16', credentials: { username: 'aina.zulkifli', password: 'Hr$P0rt@l2025' } },
+    { name: 'SharePoint & OneDrive', description: 'Configure cloud storage and document collaboration access', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  { id: 13, task: 'Issue Laptop & ID Card', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Issue company assets to the new employee:\n\n• Laptop with all required software installed\n• Power adapter and accessories\n• ID card with access permissions\n• Asset acknowledgment form\n\nRecord all serial numbers and have employee sign asset receipt form.', assetItems: [
+    { name: 'Laptop Computer', description: 'Business laptop with Windows 11, Microsoft Office suite, and essential software pre-installed', pic: 'IT Admin', issued: true, issuedAt: '2025-09-16', serialNumber: 'DELL-XPS15-2025-001234', handoverLetter: { fileName: 'Laptop_Handover_Aina.pdf', uploadedAt: '2025-09-16', signed: true }, remarks: 'Laptop in excellent condition. All software installed and tested.' },
+    { name: 'Employee ID Card', description: 'Photo ID card with building access permissions and employee identification number', pic: 'HR Admin', issued: true, issuedAt: '2025-09-16', serialNumber: 'EMP-2025-001234', handoverLetter: { fileName: 'IDCard_Handover_Aina.pdf', uploadedAt: '2025-09-16', signed: true }, remarks: null }
+  ] },
   { id: 20, task: 'Issue Laptop & ID Card', assignee: 'Jessica Wong', due: '2025-09-28', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Prepare and configure laptop for new employee:\n\n• Install standard software suite\n• Configure email client\n• Set up security software\n• Prepare ID card with photo\n• Test all equipment\n\nHave assets ready for collection before start date.' },
   // TimeTec Computing tasks
   { id: 14, task: 'Welcome Pack', assignee: 'Siti Aminah', due: '2025-09-19', type: 'General Task', indicator: 'Onboarding', status: 'completed', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Prepare welcome pack with company materials, handbook, and office supplies for the new team member.' },
@@ -1813,6 +1988,18 @@ const downloadFile = (file) => {
 const getFilledInfoCount = (task) => {
   if (!task.filledInfo || task.filledInfo.length === 0) return 0
   return task.filledInfo.filter(info => info.value).length
+}
+
+// System Access helper functions
+const getGrantedSystemsCount = (task) => {
+  if (!task.systemAccess || task.systemAccess.length === 0) return 0
+  return task.systemAccess.filter(system => system.granted).length
+}
+
+// Asset helper functions
+const getIssuedAssetsCount = (task) => {
+  if (!task.assetItems || task.assetItems.length === 0) return 0
+  return task.assetItems.filter(asset => asset.issued).length
 }
 </script>
 
@@ -2969,6 +3156,402 @@ const getFilledInfoCount = (task) => {
   font-size: 12px;
   color: var(--color-gray-400);
   font-style: italic;
+}
+
+/* System Access Section */
+.system-access-section {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1px solid #e9d5ff;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.system-access-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #7c3aed;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9d5ff;
+}
+
+.system-access-header i {
+  color: #7c3aed;
+}
+
+.system-access-header span {
+  flex: 1;
+}
+
+.system-access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.system-access-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.system-access-card:hover {
+  border-color: #c4b5fd;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
+}
+
+.system-access-card.system-granted {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.system-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.system-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.system-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #7c3aed;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.system-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.status-tag {
+  font-size: 11px;
+}
+
+.system-description {
+  padding: 0.625rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.system-details {
+  padding: 0.75rem;
+}
+
+.system-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.system-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.system-detail-item i {
+  color: #7c3aed;
+  font-size: 12px;
+}
+
+.system-credentials {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+}
+
+.credentials-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.credentials-header i {
+  color: var(--color-success-600);
+}
+
+.credentials-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.credential-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.credential-label {
+  color: var(--color-gray-500);
+}
+
+.credential-value {
+  font-weight: 500;
+  color: var(--color-gray-800);
+  background: var(--color-bg);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Asset Details Section */
+.asset-details-section {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.asset-details-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #c2410c;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fed7aa;
+}
+
+.asset-details-header i {
+  color: #ea580c;
+}
+
+.asset-details-header span {
+  flex: 1;
+}
+
+.asset-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.asset-item-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.asset-item-card:hover {
+  border-color: #fdba74;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.1);
+}
+
+.asset-item-card.asset-issued {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.asset-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.asset-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.asset-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #ea580c;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.asset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.asset-description {
+  padding: 0.625rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.asset-details-content {
+  padding: 0.75rem;
+}
+
+.asset-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.asset-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.asset-detail-item i {
+  color: #ea580c;
+  font-size: 12px;
+}
+
+.asset-serial-section {
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+}
+
+.serial-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--color-gray-500);
+  margin-bottom: 0.375rem;
+}
+
+.serial-header i {
+  color: #ea580c;
+}
+
+.serial-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--color-gray-800);
+  background: var(--color-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.asset-handover-section {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+}
+
+.handover-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.handover-header i {
+  color: var(--color-success-600);
+}
+
+.handover-header span {
+  flex: 1;
+}
+
+.handover-tag {
+  font-size: 10px;
+}
+
+.handover-file {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+}
+
+.file-icon-wrapper.orange {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffedd5;
+  border-radius: var(--radius-sm);
+  color: #ea580c;
+  font-size: 16px;
+}
+
+.asset-remarks-section {
+  padding: 0.625rem 0.75rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+}
+
+.remarks-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+  margin-bottom: 0.375rem;
+}
+
+.remarks-header i {
+  color: #3b82f6;
+}
+
+.remarks-content {
+  font-size: 12px;
+  color: var(--color-gray-700);
+  line-height: 1.5;
 }
 
 /* Task Actions Section */
