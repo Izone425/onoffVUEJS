@@ -1,6 +1,6 @@
 <template>
   <span class="status-chip" :class="variantClass">
-    {{ label }}
+    {{ displayLabel }}
   </span>
 </template>
 
@@ -34,7 +34,7 @@ const variantClass = computed(() => {
   return variants[props.status] || 'secondary'
 })
 
-const defaultLabel = computed(() => {
+const displayLabel = computed(() => {
   const labels = {
     pending: 'Pending',
     in_progress: 'In Progress',

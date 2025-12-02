@@ -2950,16 +2950,19 @@ const getFilledInfoCount = (task) => {
 }
 
 .info-field-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-gray-600);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-gray-500);
 }
 
 .info-field-value {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--color-gray-800);
+  font-weight: 600;
+  color: var(--color-primary-700);
   text-align: right;
+  background: var(--color-primary-50);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
 }
 
 .info-field-empty {
