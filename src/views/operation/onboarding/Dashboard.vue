@@ -608,11 +608,11 @@
         </DataTable>
       </div>
 
-      <!-- My Tasks Section -->
+      <!-- Tasks Section -->
       <div class="content-card">
         <div class="card-header">
           <div>
-            <h2 class="card-title">{{ currentUserRole === 'Staff' ? 'My Tasks' : 'Tasks' }}</h2>
+            <h2 class="card-title">Tasks</h2>
             <p v-if="currentUserRole === 'Staff'" class="card-subtitle">Tasks assigned specifically to you</p>
           </div>
           <Button
@@ -624,8 +624,280 @@
           />
         </div>
 
-        <!-- Tasks by Stage Grid -->
-        <div class="tasks-by-stage-grid">
+        <!-- Tabbed View for HR Admin -->
+        <TabView v-if="currentUserRole !== 'Staff'" v-model:activeIndex="tasksViewTab" class="tasks-tabs">
+          <!-- Assigned to Me Tab -->
+          <TabPanel header="Assigned to Me">
+            <DataTable :value="getTasksAssignedToMe" stripedRows responsiveLayout="scroll" class="tasks-table">
+              <Column field="task" header="Task" sortable style="width: 22%">
+                <template #body="{ data }">
+                  <span class="font-medium">{{ data.task }}</span>
+                </template>
+              </Column>
+              <Column field="assignee" header="Employee" sortable style="width: 15%" />
+              <Column field="due" header="Due" sortable style="width: 12%">
+                <template #body="{ data }">
+                  <div class="due-cell">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ data.due }}</span>
+                  </div>
+                </template>
+              </Column>
+              <Column field="type" header="Type" sortable style="width: 13%">
+                <template #body="{ data }">
+                  <Tag :value="data.type" severity="secondary" />
+                </template>
+              </Column>
+              <Column field="stage" header="Stage" sortable style="width: 14%">
+                <template #body="{ data }">
+                  <Tag :value="data.stage" :severity="getStageSeverity(data.stage)" :class="getStageClass(data.stage)" />
+                </template>
+              </Column>
+              <Column field="status" header="Status" sortable style="width: 10%">
+                <template #body="{ data }">
+                  <StatusChip :status="normalizeStatus(data.status)" />
+                </template>
+              </Column>
+              <Column header="Actions" style="width: 14%">
+                <template #body="{ data }">
+                  <div class="task-table-actions">
+                    <Button
+                      icon="pi pi-eye"
+                      severity="secondary"
+                      text
+                      rounded
+                      size="small"
+                      title="View Details"
+                      @click="openTaskDetailsDrawer(data)"
+                    />
+                    <Button
+                      v-if="data.status !== 'completed'"
+                      icon="pi pi-check-circle"
+                      severity="success"
+                      text
+                      rounded
+                      size="small"
+                      title="Mark Complete"
+                      @click="completeTask(data)"
+                    />
+                  </div>
+                </template>
+              </Column>
+              <template #empty>
+                <div class="empty-state">No tasks assigned to you</div>
+              </template>
+            </DataTable>
+          </TabPanel>
+
+          <!-- Team Tab -->
+          <TabPanel header="Team">
+            <DataTable :value="getTeamTasks" stripedRows responsiveLayout="scroll" class="tasks-table">
+              <Column field="task" header="Task" sortable style="width: 20%">
+                <template #body="{ data }">
+                  <span class="font-medium">{{ data.task }}</span>
+                </template>
+              </Column>
+              <Column field="assignee" header="Employee" sortable style="width: 13%" />
+              <Column field="assignedTo" header="Assigned To" sortable style="width: 12%">
+                <template #body="{ data }">
+                  <Tag :value="data.assignedTo" severity="info" />
+                </template>
+              </Column>
+              <Column field="due" header="Due" sortable style="width: 10%">
+                <template #body="{ data }">
+                  <div class="due-cell">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ data.due }}</span>
+                  </div>
+                </template>
+              </Column>
+              <Column field="type" header="Type" sortable style="width: 11%">
+                <template #body="{ data }">
+                  <Tag :value="data.type" severity="secondary" />
+                </template>
+              </Column>
+              <Column field="stage" header="Stage" sortable style="width: 12%">
+                <template #body="{ data }">
+                  <Tag :value="data.stage" :severity="getStageSeverity(data.stage)" :class="getStageClass(data.stage)" />
+                </template>
+              </Column>
+              <Column field="status" header="Status" sortable style="width: 10%">
+                <template #body="{ data }">
+                  <StatusChip :status="normalizeStatus(data.status)" />
+                </template>
+              </Column>
+              <Column header="Actions" style="width: 12%">
+                <template #body="{ data }">
+                  <div class="task-table-actions">
+                    <Button
+                      icon="pi pi-eye"
+                      severity="secondary"
+                      text
+                      rounded
+                      size="small"
+                      title="View Details"
+                      @click="openTaskDetailsDrawer(data)"
+                    />
+                    <Button
+                      v-if="data.status !== 'completed'"
+                      icon="pi pi-check-circle"
+                      severity="success"
+                      text
+                      rounded
+                      size="small"
+                      title="Mark Complete"
+                      @click="completeTask(data)"
+                    />
+                  </div>
+                </template>
+              </Column>
+              <template #empty>
+                <div class="empty-state">No team tasks found</div>
+              </template>
+            </DataTable>
+          </TabPanel>
+
+          <!-- Unassigned Tab -->
+          <TabPanel header="Unassigned">
+            <DataTable :value="getUnassignedTasks" stripedRows responsiveLayout="scroll" class="tasks-table">
+              <Column field="task" header="Task" sortable style="width: 22%">
+                <template #body="{ data }">
+                  <span class="font-medium">{{ data.task }}</span>
+                </template>
+              </Column>
+              <Column field="assignee" header="Employee" sortable style="width: 15%" />
+              <Column field="due" header="Due" sortable style="width: 12%">
+                <template #body="{ data }">
+                  <div class="due-cell">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ data.due }}</span>
+                  </div>
+                </template>
+              </Column>
+              <Column field="type" header="Type" sortable style="width: 13%">
+                <template #body="{ data }">
+                  <Tag :value="data.type" severity="secondary" />
+                </template>
+              </Column>
+              <Column field="stage" header="Stage" sortable style="width: 14%">
+                <template #body="{ data }">
+                  <Tag :value="data.stage" :severity="getStageSeverity(data.stage)" :class="getStageClass(data.stage)" />
+                </template>
+              </Column>
+              <Column field="status" header="Status" sortable style="width: 10%">
+                <template #body="{ data }">
+                  <StatusChip :status="normalizeStatus(data.status)" />
+                </template>
+              </Column>
+              <Column header="Actions" style="width: 18%">
+                <template #body="{ data }">
+                  <div class="task-table-actions">
+                    <Button
+                      icon="pi pi-eye"
+                      severity="secondary"
+                      text
+                      rounded
+                      size="small"
+                      title="View Details"
+                      @click="openTaskDetailsDrawer(data)"
+                    />
+                    <Button
+                      icon="pi pi-user-plus"
+                      label="Assign"
+                      severity="info"
+                      outlined
+                      size="small"
+                      class="assign-dropdown-btn"
+                      @click="(event) => toggleAssignPanel(event, data)"
+                    />
+                    <OverlayPanel
+                      :ref="(el) => setAssignPanelRef(el, data.id)"
+                      class="assign-panel"
+                      :dismissable="true"
+                    >
+                      <div class="assign-panel-content">
+                        <!-- Search Input -->
+                        <div class="assign-search">
+                          <i class="pi pi-search"></i>
+                          <InputText
+                            v-model="assignSearchQuery"
+                            placeholder="Search..."
+                            class="assign-search-input"
+                            @input="filterAssignOptions"
+                          />
+                        </div>
+
+                        <!-- Assign to Me Option -->
+                        <div class="assign-section">
+                          <div
+                            class="assign-option assign-to-me"
+                            @click="assignTask(data, 'me', currentUserName); closeAssignPanel(data.id)"
+                          >
+                            <i class="pi pi-user"></i>
+                            <span>Assign to Me</span>
+                          </div>
+                        </div>
+
+                        <!-- Departments Section -->
+                        <div class="assign-section" v-if="filteredDepartments.length > 0">
+                          <div class="assign-section-header">
+                            <i class="pi pi-building"></i>
+                            <span>Departments</span>
+                          </div>
+                          <div class="assign-options-list">
+                            <div
+                              v-for="dept in filteredDepartments"
+                              :key="dept.id"
+                              class="assign-option"
+                              @click="assignTask(data, 'department', dept.code); closeAssignPanel(data.id)"
+                            >
+                              <i class="pi pi-users"></i>
+                              <span>{{ dept.name }}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Employees Section -->
+                        <div class="assign-section" v-if="filteredEmployees.length > 0">
+                          <div class="assign-section-header">
+                            <i class="pi pi-user-plus"></i>
+                            <span>Employees</span>
+                          </div>
+                          <div class="assign-options-list">
+                            <div
+                              v-for="emp in filteredEmployees"
+                              :key="emp.id"
+                              class="assign-option"
+                              @click="assignTask(data, 'employee', emp.name); closeAssignPanel(data.id)"
+                            >
+                              <i class="pi pi-user"></i>
+                              <div class="employee-option-info">
+                                <span class="employee-name">{{ emp.name }}</span>
+                                <span class="employee-role">{{ emp.role }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- No Results -->
+                        <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
+                          <i class="pi pi-info-circle"></i>
+                          <span>No results found</span>
+                        </div>
+                      </div>
+                    </OverlayPanel>
+                  </div>
+                </template>
+              </Column>
+              <template #empty>
+                <div class="empty-state">No unassigned tasks</div>
+              </template>
+            </DataTable>
+          </TabPanel>
+        </TabView>
+
+        <!-- Staff View - Tasks by Stage Grid -->
+        <div v-else class="tasks-by-stage-grid">
           <div v-for="stage in onboardingStages" :key="stage" class="stage-section">
             <div class="stage-section-header">
               <div class="stage-section-title">
@@ -654,16 +926,6 @@
                 <div class="task-item-actions" @click.stop>
                   <Button
                     v-if="task.status !== 'completed'"
-                    icon="pi pi-bell"
-                    severity="info"
-                    text
-                    rounded
-                    size="small"
-                    title="Send Reminder"
-                    @click="sendReminder(task)"
-                  />
-                  <Button
-                    v-if="task.status !== 'completed'"
                     icon="pi pi-check"
                     severity="success"
                     text
@@ -671,26 +933,6 @@
                     size="small"
                     title="Mark Complete"
                     @click="completeTask(task)"
-                  />
-                  <Button
-                    v-if="task.status !== 'completed'"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    text
-                    rounded
-                    size="small"
-                    title="Delete"
-                    @click="deleteTask(task)"
-                  />
-                  <Button
-                    v-if="task.status === 'completed'"
-                    icon="pi pi-refresh"
-                    severity="warning"
-                    text
-                    rounded
-                    size="small"
-                    title="Reset Status"
-                    @click="resetTask(task)"
                   />
                 </div>
               </div>
@@ -1169,42 +1411,183 @@
           </div>
         </div>
 
+        <!-- Questionnaire Section (for Questionnaire type tasks) -->
+        <div v-if="selectedTaskForDetails.questionnaire && selectedTaskForDetails.questionnaire.length > 0" class="questionnaire-section">
+          <div class="questionnaire-header">
+            <i class="pi pi-question-circle"></i>
+            <span>Questionnaire</span>
+            <Tag
+              :value="`${getAnsweredQuestionsCount(selectedTaskForDetails)}/${selectedTaskForDetails.questionnaire.length}`"
+              :severity="getAnsweredQuestionsCount(selectedTaskForDetails) === selectedTaskForDetails.questionnaire.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="questionnaire-list">
+            <div
+              v-for="(question, index) in selectedTaskForDetails.questionnaire"
+              :key="index"
+              class="question-card"
+              :class="{ 'question-answered': question.answer }"
+            >
+              <div class="question-card-header">
+                <div class="question-info">
+                  <span class="question-number">Q{{ index + 1 }}</span>
+                  <span class="question-text">{{ question.question }}</span>
+                </div>
+              </div>
+              <div class="question-meta">
+                <Tag :value="question.type" severity="secondary" class="type-tag" />
+                <Tag
+                  :value="question.required ? 'Required' : 'Optional'"
+                  :severity="question.required ? 'info' : 'secondary'"
+                  class="required-tag"
+                />
+              </div>
+              <div v-if="question.answer" class="question-answer-section">
+                <div class="answer-header">
+                  <span>Answer</span>
+                </div>
+                <div class="answer-content">{{ question.answer }}</div>
+              </div>
+              <div v-else class="question-no-answer">
+                <i class="pi pi-clock"></i>
+                <span>Awaiting response</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="task-actions-section">
-          <Button
-            v-if="selectedTaskForDetails.status === 'completed'"
-            icon="pi pi-refresh"
-            label="Revert Mark as Completed"
-            severity="secondary"
-            outlined
-            class="w-full"
-            @click="resetTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
-          />
+          <!-- Unassigned Task Actions -->
+          <template v-if="isTaskUnassigned(selectedTaskForDetails)">
+            <Button
+              icon="pi pi-user-plus"
+              label="Assign"
+              class="w-full"
+              @click="(event) => toggleTaskDrawerAssignPanel(event)"
+            />
+            <OverlayPanel
+              ref="taskDrawerAssignPanelRef"
+              class="assign-panel"
+              :dismissable="true"
+            >
+              <div class="assign-panel-content">
+                <!-- Search Input -->
+                <div class="assign-search">
+                  <i class="pi pi-search"></i>
+                  <InputText
+                    v-model="assignSearchQuery"
+                    placeholder="Search..."
+                    class="assign-search-input"
+                  />
+                </div>
+
+                <!-- Assign to Me Option -->
+                <div class="assign-section">
+                  <div
+                    class="assign-option assign-to-me"
+                    @click="assignTaskFromDrawer('me', currentUserName)"
+                  >
+                    <i class="pi pi-user"></i>
+                    <span>Assign to Me</span>
+                  </div>
+                </div>
+
+                <!-- Departments Section -->
+                <div class="assign-section" v-if="filteredDepartments.length > 0">
+                  <div class="assign-section-header">
+                    <i class="pi pi-building"></i>
+                    <span>Departments</span>
+                  </div>
+                  <div class="assign-options-list">
+                    <div
+                      v-for="dept in filteredDepartments"
+                      :key="dept.id"
+                      class="assign-option"
+                      @click="assignTaskFromDrawer('department', dept.code)"
+                    >
+                      <i class="pi pi-users"></i>
+                      <span>{{ dept.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Employees Section -->
+                <div class="assign-section" v-if="filteredEmployees.length > 0">
+                  <div class="assign-section-header">
+                    <i class="pi pi-user-plus"></i>
+                    <span>Employees</span>
+                  </div>
+                  <div class="assign-options-list">
+                    <div
+                      v-for="emp in filteredEmployees"
+                      :key="emp.id"
+                      class="assign-option"
+                      @click="assignTaskFromDrawer('employee', emp.name)"
+                    >
+                      <i class="pi pi-user"></i>
+                      <div class="employee-option-info">
+                        <span class="employee-name">{{ emp.name }}</span>
+                        <span class="employee-role">{{ emp.role }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- No Results -->
+                <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
+                  <i class="pi pi-info-circle"></i>
+                  <span>No results found</span>
+                </div>
+              </div>
+            </OverlayPanel>
+            <Button
+              icon="pi pi-trash"
+              label="Delete"
+              severity="danger"
+              outlined
+              class="w-full mt-2"
+              @click="deleteTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
+            />
+          </template>
+
+          <!-- Assigned Task Actions -->
           <template v-else>
             <Button
-              icon="pi pi-check-circle"
-              label="Mark as Complete"
+              v-if="selectedTaskForDetails.status === 'completed'"
+              icon="pi pi-refresh"
+              label="Revert Mark as Completed"
+              severity="secondary"
+              outlined
               class="w-full"
-              @click="completeTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
+              @click="resetTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
             />
-            <div class="action-buttons-row">
+            <template v-else>
               <Button
-                icon="pi pi-bell"
-                label="Nudge"
-                severity="secondary"
-                outlined
-                class="flex-1"
-                @click="sendReminder(selectedTaskForDetails)"
+                icon="pi pi-check-circle"
+                label="Mark as Complete"
+                class="w-full"
+                @click="completeTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
               />
-              <Button
-                icon="pi pi-trash"
-                label="Delete"
-                severity="danger"
-                outlined
-                class="flex-1"
-                @click="deleteTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
-              />
-            </div>
+              <div class="action-buttons-row">
+                <Button
+                  icon="pi pi-bell"
+                  label="Nudge"
+                  severity="secondary"
+                  outlined
+                  class="flex-1"
+                  @click="sendReminder(selectedTaskForDetails)"
+                />
+                <Button
+                  icon="pi pi-trash"
+                  label="Delete"
+                  severity="danger"
+                  outlined
+                  class="flex-1"
+                  @click="deleteTask(selectedTaskForDetails); isTaskDetailsDrawerOpen = false"
+                />
+              </div>
+            </template>
           </template>
         </div>
       </div>
@@ -1363,6 +1746,8 @@ import Calendar from 'primevue/calendar'
 import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
 import Popover from 'primevue/popover'
+import Menu from 'primevue/menu'
+import OverlayPanel from 'primevue/overlaypanel'
 import StatusChip from '../../../components/ui/StatusChip.vue'
 
 const toast = useToast()
@@ -1376,6 +1761,28 @@ const companies = ref([
   { id: 'timetec-cloud', name: 'TimeTec Cloud' },
   { id: 'timetec-computing', name: 'TimeTec Computing' },
   { id: 'fingertech', name: 'FingerTec' }
+])
+
+// Departments for task assignment
+const departments = ref([
+  { id: 'hr', name: 'Human Resources', code: 'HR' },
+  { id: 'it', name: 'Information Technology', code: 'IT' },
+  { id: 'finance', name: 'Finance & Accounting', code: 'Finance' },
+  { id: 'operations', name: 'Operations', code: 'Operations' },
+  { id: 'marketing', name: 'Marketing', code: 'Marketing' },
+  { id: 'sales', name: 'Sales', code: 'Sales' }
+])
+
+// Employees for task assignment
+const employees = ref([
+  { id: 'emp-1', name: 'Ahmed Fauzi', department: 'hr', role: 'HR Admin' },
+  { id: 'emp-2', name: 'Farah Kassim', department: 'hr', role: 'HR Coordinator' },
+  { id: 'emp-3', name: 'Nizam Salleh', department: 'it', role: 'IT Manager' },
+  { id: 'emp-4', name: 'Lina Wong', department: 'it', role: 'IT Support' },
+  { id: 'emp-5', name: 'Razak Hassan', department: 'operations', role: 'Operations Manager' },
+  { id: 'emp-6', name: 'Jason Tan', department: 'finance', role: 'Finance Manager' },
+  { id: 'emp-7', name: 'Kamala Devi', department: 'marketing', role: 'Marketing Lead' },
+  { id: 'emp-8', name: 'David Kim', department: 'sales', role: 'Sales Manager' }
 ])
 
 // Onboarding stages
@@ -1418,6 +1825,7 @@ const showProgressByNewHire = ref(false)
 const showEmployeeTasksPage = ref(false)
 const progressViewTab = ref(0)
 const taskStageTab = ref(0)
+const tasksViewTab = ref(0)
 const progressSearchQuery = ref('')
 const progressStageFilter = ref('all')
 const progressStatusFilter = ref('all')
@@ -1448,6 +1856,12 @@ const addTaskFormData = ref({
 
 // Company filter popover ref
 const companyFilterPopover = ref(null)
+
+// Assign panel refs and state
+const assignPanelRefs = ref({})
+const currentAssignTask = ref(null)
+const assignSearchQuery = ref('')
+const taskDrawerAssignPanelRef = ref(null)
 
 // Sample data - New Hires
 const allNewHires = ref([
@@ -1496,12 +1910,12 @@ const allTasks = ref([
     { name: 'Benefits enrollment forms', completed: false },
     { name: 'Emergency contact form', completed: false }
   ] },
-  { id: 9, task: 'Employee Feedback Survey', assignee: 'Aina Zulkifli', due: '2025-09-23', type: 'Questionnaire', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Send and collect the 7-day onboarding feedback survey. Analyze responses and share insights with the onboarding team.', requiredItems: [
-    { name: 'Overall onboarding experience rating', completed: false },
-    { name: 'Quality of orientation sessions', completed: false },
-    { name: 'Workstation and equipment satisfaction', completed: false },
-    { name: 'Team integration feedback', completed: false },
-    { name: 'Suggestions for improvement', completed: false }
+  { id: 9, task: 'Employee Feedback Survey', assignee: 'Aina Zulkifli', due: '2025-09-23', type: 'Questionnaire', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: 'Next Day-Onboarding', company: 'timetec-cloud', description: 'Send and collect the 7-day onboarding feedback survey. Analyze responses and share insights with the onboarding team.', questionnaire: [
+    { question: 'How would you rate your overall onboarding experience?', type: 'Picklist (Single)', required: true, answer: 'Excellent' },
+    { question: 'Which aspects of onboarding were most helpful?', type: 'Picklist (Multiple)', required: true, answer: 'Welcome orientation, Team introduction, Equipment setup' },
+    { question: 'How satisfied are you with your workstation and equipment?', type: 'Picklist (Single)', required: true, answer: 'Very Satisfied' },
+    { question: 'How well did your team help you integrate into the workplace?', type: 'Picklist (Single)', required: true, answer: 'Excellent' },
+    { question: 'What suggestions do you have for improving the onboarding process?', type: 'Text (Multiple Lines)', required: false, answer: 'The onboarding process was smooth overall. I appreciated the detailed orientation session and the warm welcome from the team. One suggestion would be to provide a digital checklist that employees can access on their phones.' }
   ] },
   { id: 10, task: 'Office Tour & Badge Photo', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'General Task', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct office tour and take badge photo:\n\n• Tour all office areas and facilities\n• Introduce to key personnel\n• Show emergency exits and assembly points\n• Take professional photo for ID badge\n• Explain office etiquette and rules\n\nDuration: Approximately 45 minutes.' },
   { id: 11, task: 'Day 1 Orientation', assignee: 'Aina Zulkifli', due: '2025-09-16', type: 'Meeting/Event', indicator: 'Onboarding', status: 'pending', assignedTo: 'HR', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Conduct comprehensive Day 1 orientation:\n\n• Welcome and introductions\n• Company overview presentation\n• HR policies and procedures\n• Benefits explanation\n• IT systems overview\n• Safety briefing\n\nProvide orientation materials and answer any questions.' },
@@ -1525,7 +1939,19 @@ const allTasks = ref([
   { id: 19, task: 'Onboarding Checklist Review', assignee: 'Daniel Lee', due: '2025-09-21', type: 'General Task', indicator: 'Onboarding', status: 'completed', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Review and verify completion of all pre-onboarding checklist items before the employee\'s start date.' },
   { id: 21, task: 'Security Access Setup', assignee: 'Daniel Lee', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Configure security access including building access card, system login credentials, and appropriate permission levels based on role requirements.' },
   { id: 22, task: 'Department Tour', assignee: 'Daniel Lee', due: '2025-09-21', type: 'Meeting/Event', indicator: 'Onboarding', status: 'completed', assignedTo: 'Manager', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Conduct a comprehensive tour of the department, introducing the new employee to team members and explaining workflows and collaboration points.' },
-  { id: 23, task: 'Company Policy Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-06', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Conduct briefing session covering all company policies:\n\n• Code of conduct\n• Leave policies\n• Performance review process\n• Communication guidelines\n• Dress code\n\nProvide policy handbook and answer questions.' }
+  { id: 23, task: 'Company Policy Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-06', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Conduct briefing session covering all company policies:\n\n• Code of conduct\n• Leave policies\n• Performance review process\n• Communication guidelines\n• Dress code\n\nProvide policy handbook and answer questions.' },
+  // Unassigned Tasks - TimeTec Cloud
+  { id: 24, task: 'Configure VPN Access', assignee: 'Jessica Wong', due: '2025-09-28', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Configure VPN access for remote work capability:\n\n• Set up VPN client on employee device\n• Generate VPN credentials\n• Configure access permissions\n• Test connectivity to internal resources\n• Provide VPN usage guidelines' },
+  { id: 25, task: 'Setup Development Environment', assignee: 'Jessica Wong', due: '2025-09-29', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Set up complete development environment:\n\n• Install IDE and required plugins\n• Configure version control (Git)\n• Set up local development server\n• Install project dependencies\n• Configure code formatting and linting tools' },
+  { id: 26, task: 'Team Introduction Meeting', assignee: 'Jessica Wong', due: '2025-10-01', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Organize team introduction meeting:\n\n• Schedule meeting with all team members\n• Prepare introduction presentation\n• Plan team bonding activities\n• Share team structure and roles\n• Discuss current projects and priorities' },
+  { id: 27, task: 'Security Badge Activation', assignee: 'Harith Rahman', due: '2025-09-25', type: 'Asset', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Activate security badge for building access:\n\n• Encode access card with appropriate permissions\n• Set up floor and room access levels\n• Register fingerprint for biometric access\n• Test all access points\n• Provide access guidelines and emergency procedures' },
+  // Unassigned Tasks - TimeTec Computing
+  { id: 28, task: 'Assign Workspace', assignee: 'Amir Hamzah', due: '2025-09-27', type: 'Asset', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Assign and prepare workspace for new employee:\n\n• Allocate desk/cubicle location\n• Set up ergonomic chair and equipment\n• Install desk phone with extension\n• Provide office supplies kit\n• Add name plate and department signage' },
+  { id: 29, task: 'Parking Pass Issuance', assignee: 'Amir Hamzah', due: '2025-09-27', type: 'General Task', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Issue parking pass to new employee:\n\n• Register vehicle details in system\n• Generate parking access card\n• Assign parking bay if applicable\n• Explain parking rules and designated areas\n• Provide contact for parking issues' },
+  { id: 30, task: 'Software License Allocation', assignee: 'Siti Aminah', due: '2025-09-20', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Allocate required software licenses:\n\n• Assign Microsoft Office 365 license\n• Allocate project management tool access\n• Set up design software licenses (if applicable)\n• Configure collaboration tool access\n• Document all allocated licenses' },
+  // Unassigned Tasks - FingerTec
+  { id: 31, task: 'Biometric Enrollment', assignee: 'Daniel Lee', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Enroll employee in biometric attendance system:\n\n• Register fingerprint templates\n• Set up facial recognition profile\n• Configure attendance schedule\n• Link to payroll system\n• Test clock-in/clock-out functionality' },
+  { id: 32, task: 'Department Budget Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-07', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Next Day-Onboarding', company: 'fingertech', description: 'Conduct department budget briefing:\n\n• Explain budget allocation process\n• Review expense approval workflow\n• Demonstrate expense reporting system\n• Discuss procurement procedures\n• Provide budget policy documentation' }
 ])
 
 // Sample data - Alerts
@@ -1683,6 +2109,46 @@ const employeeActualProgress = computed(() => {
   return Math.round((employeeCompletedTasks.value / employeeTotalTasks.value) * 100)
 })
 
+// Current user for task assignment (would come from auth store in real app)
+const currentUserName = 'Ahmed Fauzi'
+
+// Computed properties for Tasks tabs
+const getTasksAssignedToMe = computed(() => {
+  return filteredTasks.value.filter(task => task.assignedTo === 'HR' || task.assignedTo === 'HR Admin' || task.assignedTo === 'HR Coordinator')
+})
+
+const getTeamTasks = computed(() => {
+  // All tasks assigned to team members (not unassigned)
+  return filteredTasks.value.filter(task => task.assignedTo && task.assignedTo !== 'Unassigned')
+})
+
+const getUnassignedTasks = computed(() => {
+  return filteredTasks.value.filter(task => !task.assignedTo || task.assignedTo === 'Unassigned')
+})
+
+// Filtered lists for assign panel search
+const filteredDepartments = computed(() => {
+  if (!assignSearchQuery.value.trim()) {
+    return departments.value
+  }
+  const query = assignSearchQuery.value.toLowerCase()
+  return departments.value.filter(dept =>
+    dept.name.toLowerCase().includes(query) ||
+    dept.code.toLowerCase().includes(query)
+  )
+})
+
+const filteredEmployees = computed(() => {
+  if (!assignSearchQuery.value.trim()) {
+    return employees.value
+  }
+  const query = assignSearchQuery.value.toLowerCase()
+  return employees.value.filter(emp =>
+    emp.name.toLowerCase().includes(query) ||
+    emp.role.toLowerCase().includes(query)
+  )
+})
+
 // Helper functions
 const getCompanyName = (companyId) => {
   const company = companies.value.find(c => c.id === companyId)
@@ -1700,6 +2166,15 @@ const getStageSeverity = (stage) => {
     case '1st Day-Onboarding': return 'info'
     case 'Next Day-Onboarding': return 'success'
     default: return 'secondary'
+  }
+}
+
+const getStageClass = (stage) => {
+  switch (stage) {
+    case 'Pre-Onboarding': return 'stage-pre'
+    case '1st Day-Onboarding': return 'stage-first'
+    case 'Next Day-Onboarding': return 'stage-next'
+    default: return ''
   }
 }
 
@@ -1920,6 +2395,92 @@ const resetTask = (task) => {
   })
 }
 
+const assignTaskToMe = (task) => {
+  task.assignedTo = currentUserName
+  toast.add({
+    severity: 'success',
+    summary: 'Task Assigned',
+    detail: `Task "${task.task}" has been assigned to you`,
+    life: 3000
+  })
+}
+
+// Assign Panel Functions
+const setAssignPanelRef = (el, taskId) => {
+  if (el) {
+    assignPanelRefs.value[taskId] = el
+  }
+}
+
+const toggleAssignPanel = (event, task) => {
+  currentAssignTask.value = task
+  assignSearchQuery.value = '' // Reset search when opening
+  const panel = assignPanelRefs.value[task.id]
+  if (panel) {
+    panel.toggle(event)
+  }
+}
+
+const closeAssignPanel = (taskId) => {
+  const panel = assignPanelRefs.value[taskId]
+  if (panel) {
+    panel.hide()
+  }
+  assignSearchQuery.value = ''
+}
+
+const filterAssignOptions = () => {
+  // Filtering is handled by computed properties
+  // This function can be used for additional logic if needed
+}
+
+const assignTask = (task, type, assignee) => {
+  task.assignedTo = assignee
+
+  let detail = ''
+  switch (type) {
+    case 'me':
+      detail = `Task "${task.task}" has been assigned to you`
+      break
+    case 'department':
+      detail = `Task "${task.task}" has been assigned to ${assignee} department`
+      break
+    case 'employee':
+      detail = `Task "${task.task}" has been assigned to ${assignee}`
+      break
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Task Assigned',
+    detail,
+    life: 3000
+  })
+}
+
+// Task Drawer Assign Panel Functions
+const isTaskUnassigned = (task) => {
+  return !task.assignedTo || task.assignedTo === 'Unassigned'
+}
+
+const toggleTaskDrawerAssignPanel = (event) => {
+  assignSearchQuery.value = ''
+  if (taskDrawerAssignPanelRef.value) {
+    taskDrawerAssignPanelRef.value.toggle(event)
+  }
+}
+
+const assignTaskFromDrawer = (type, assignee) => {
+  if (selectedTaskForDetails.value) {
+    assignTask(selectedTaskForDetails.value, type, assignee)
+    if (taskDrawerAssignPanelRef.value) {
+      taskDrawerAssignPanelRef.value.hide()
+    }
+    assignSearchQuery.value = ''
+    isTaskDetailsDrawerOpen.value = false
+  }
+}
+
 // Required Items helper functions
 const getCompletedItemsCount = (task) => {
   if (!task.requiredItems || task.requiredItems.length === 0) return 0
@@ -2000,6 +2561,12 @@ const getGrantedSystemsCount = (task) => {
 const getIssuedAssetsCount = (task) => {
   if (!task.assetItems || task.assetItems.length === 0) return 0
   return task.assetItems.filter(asset => asset.issued).length
+}
+
+// Questionnaire helper functions
+const getAnsweredQuestionsCount = (task) => {
+  if (!task.questionnaire || task.questionnaire.length === 0) return 0
+  return task.questionnaire.filter(q => q.answer).length
 }
 </script>
 
@@ -3554,6 +4121,152 @@ const getIssuedAssetsCount = (task) => {
   line-height: 1.5;
 }
 
+/* Questionnaire Section */
+.questionnaire-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.questionnaire-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.questionnaire-header i {
+  color: #6366f1;
+}
+
+.questionnaire-header span {
+  flex: 1;
+}
+
+.questionnaire-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.question-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.question-card:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.question-card.question-answered {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.question-card-header {
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.question-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.question-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  background: #6366f1;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.question-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  line-height: 1.4;
+}
+
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.type-tag {
+  font-size: 10px;
+}
+
+.required-tag {
+  font-size: 10px;
+}
+
+.question-answer-section {
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-top: 1px solid #bbf7d0;
+}
+
+.answer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.answer-header i {
+  color: var(--color-success-600);
+}
+
+.answer-content {
+  font-size: 13px;
+  color: var(--color-success-900);
+  line-height: 1.5;
+  background: var(--color-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #bbf7d0;
+}
+
+.question-no-answer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  color: var(--color-gray-400);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.question-no-answer i {
+  font-size: 14px;
+}
+
 /* Task Actions Section */
 .task-actions-section {
   display: flex;
@@ -3805,5 +4518,291 @@ const getIssuedAssetsCount = (task) => {
   .filter-dropdown {
     width: 100%;
   }
+}
+
+/* Tasks Tabs Styles */
+.tasks-tabs {
+  margin-top: 0.5rem;
+}
+
+.tasks-tabs :deep(.p-tabview-nav) {
+  background: transparent;
+  border: none;
+  gap: 0.5rem;
+  padding: 0 0 0.5rem 0;
+}
+
+.tasks-tabs :deep(.p-tabview-nav-link) {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 13px;
+  color: var(--color-gray-600);
+  border-radius: 6px;
+}
+
+.tasks-tabs :deep(.p-tabview-nav-link:hover) {
+  background: var(--color-gray-100);
+}
+
+.tasks-tabs :deep(.p-tabview-header.p-highlight .p-tabview-nav-link) {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  font-weight: 500;
+}
+
+.tasks-tabs :deep(.p-tabview-panels) {
+  background: transparent;
+  padding: 0.75rem 0 0 0;
+}
+
+.tasks-tabs :deep(.p-tabview-ink-bar) {
+  display: none;
+}
+
+/* Tasks Table */
+.tasks-table {
+  font-size: 13px;
+}
+
+.tasks-table :deep(.p-datatable-header) {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.tasks-table :deep(.p-datatable-thead > tr > th) {
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-200);
+  padding: 0.75rem 1rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tasks-table :deep(.p-datatable-tbody > tr > td) {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-gray-100);
+  vertical-align: middle;
+}
+
+.tasks-table :deep(.p-datatable-tbody > tr:hover) {
+  background: var(--color-gray-50);
+}
+
+.task-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.due-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-gray-600);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.due-cell i {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+/* Stage Badge Colors */
+.stage-pre,
+.stage-first,
+.stage-next {
+  white-space: nowrap !important;
+}
+
+.stage-pre {
+  background-color: rgba(147, 51, 234, 0.1) !important;
+  color: #9333ea !important;
+  border: none !important;
+}
+
+.stage-first {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #3b82f6 !important;
+  border: none !important;
+}
+
+.stage-next {
+  background-color: rgba(22, 163, 74, 0.1) !important;
+  color: #16a34a !important;
+  border: none !important;
+}
+
+/* Assign Dropdown Button */
+.assign-dropdown-btn {
+  font-size: 12px;
+  padding: 0.375rem 0.75rem;
+}
+
+.assign-dropdown-btn :deep(.p-button-icon) {
+  font-size: 12px;
+}
+
+/* Assign Panel Styles */
+.assign-panel {
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.assign-panel :deep(.p-overlaypanel-content) {
+  padding: 0;
+}
+
+.assign-panel-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Search Input */
+.assign-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.assign-search i {
+  color: var(--color-gray-400);
+  font-size: 14px;
+}
+
+.assign-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  padding: 0.25rem;
+  outline: none;
+}
+
+.assign-search-input:focus {
+  box-shadow: none;
+}
+
+.assign-search-input::placeholder {
+  color: var(--color-gray-400);
+}
+
+/* Assign Sections */
+.assign-section {
+  padding: 0.5rem 0;
+}
+
+.assign-section:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.assign-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.assign-section-header i {
+  font-size: 12px;
+}
+
+/* Assign Options */
+.assign-options-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.assign-option {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  font-size: 13px;
+  color: var(--color-gray-700);
+}
+
+.assign-option:hover {
+  background: var(--color-gray-100);
+}
+
+.assign-option i {
+  font-size: 14px;
+  color: var(--color-gray-500);
+  width: 18px;
+  text-align: center;
+}
+
+.assign-to-me {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  font-weight: 500;
+}
+
+.assign-to-me:hover {
+  background: var(--color-primary-100);
+}
+
+.assign-to-me i {
+  color: var(--color-primary-600);
+}
+
+/* Employee Option Info */
+.employee-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.employee-option-info .employee-name {
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.employee-option-info .employee-role {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+/* No Results */
+.assign-no-results {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--color-gray-500);
+  font-size: 13px;
+}
+
+.assign-no-results i {
+  font-size: 16px;
+}
+
+/* Utility Classes */
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+/* Task Table Tags - prevent wrapping */
+:deep(.p-datatable .p-tag) {
+  white-space: nowrap;
 }
 </style>
