@@ -1733,6 +1733,7 @@
 import { ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../../../stores/userStore'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -1752,9 +1753,11 @@ import StatusChip from '../../../components/ui/StatusChip.vue'
 
 const toast = useToast()
 const router = useRouter()
+const userStore = useUserStore()
 
-// Current user role (would come from store in real app)
-const currentUserRole = ref('HR Admin')
+// Current user role from store
+const currentUserRole = computed(() => userStore.currentUser?.role || 'HR Admin')
+const currentUserName = computed(() => userStore.currentUser?.name || 'Ahmed Fauzi')
 
 // Companies
 const companies = ref([
@@ -1951,7 +1954,56 @@ const allTasks = ref([
   { id: 30, task: 'Software License Allocation', assignee: 'Siti Aminah', due: '2025-09-20', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Allocate required software licenses:\n\n• Assign Microsoft Office 365 license\n• Allocate project management tool access\n• Set up design software licenses (if applicable)\n• Configure collaboration tool access\n• Document all allocated licenses' },
   // Unassigned Tasks - FingerTec
   { id: 31, task: 'Biometric Enrollment', assignee: 'Daniel Lee', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Enroll employee in biometric attendance system:\n\n• Register fingerprint templates\n• Set up facial recognition profile\n• Configure attendance schedule\n• Link to payroll system\n• Test clock-in/clock-out functionality' },
-  { id: 32, task: 'Department Budget Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-07', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Next Day-Onboarding', company: 'fingertech', description: 'Conduct department budget briefing:\n\n• Explain budget allocation process\n• Review expense approval workflow\n• Demonstrate expense reporting system\n• Discuss procurement procedures\n• Provide budget policy documentation' }
+  { id: 32, task: 'Department Budget Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-07', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'Unassigned', stage: 'Next Day-Onboarding', company: 'fingertech', description: 'Conduct department budget briefing:\n\n• Explain budget allocation process\n• Review expense approval workflow\n• Demonstrate expense reporting system\n• Discuss procurement procedures\n• Provide budget policy documentation' },
+  // IT/PIC Assigned Tasks - System/Access & Asset Types (for David Kim)
+  // TimeTec Cloud - IT/PIC Tasks
+  { id: 33, task: 'Configure Project Management Tool Access', assignee: 'Harith Rahman', due: '2025-09-26', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Grant access to project management tools:\n\n• Create Jira/Asana account\n• Add to relevant project boards\n• Set up notification preferences\n• Configure dashboard views\n• Assign to initial projects', systemAccess: [
+    { name: 'Jira Software', description: 'Project tracking and issue management system', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Confluence', description: 'Team collaboration and documentation platform', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Slack Workspace', description: 'Team communication and messaging platform', pic: 'IT Admin', granted: true, grantedAt: '2025-09-20', credentials: { email: 'harith.rahman@timetec.com', workspace: 'TimeTec Cloud' } }
+  ] },
+  { id: 34, task: 'Setup Cloud Development Access', assignee: 'Jessica Wong', due: '2025-09-28', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Configure cloud platform access:\n\n• Create AWS/Azure account\n• Set up IAM roles and permissions\n• Configure CLI access\n• Set up SSH keys\n• Enable MFA authentication', systemAccess: [
+    { name: 'AWS Console', description: 'Amazon Web Services cloud platform access', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Azure Portal', description: 'Microsoft Azure cloud services access', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'GitHub Enterprise', description: 'Source code repository and version control', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  { id: 35, task: 'Issue Monitor & Peripherals', assignee: 'Harith Rahman', due: '2025-09-24', type: 'Asset', indicator: 'Onboarding', status: 'in_progress', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Issue additional workstation equipment:\n\n• External monitor (24" or larger)\n• Wireless keyboard and mouse\n• USB hub/docking station\n• Webcam for video calls\n• Headset with microphone', assetItems: [
+    { name: 'External Monitor', description: 'Dell 27" UltraSharp Monitor for dual-screen setup', pic: 'IT Admin', issued: true, issuedAt: '2025-09-22', serialNumber: 'DELL-U2722D-2025-005678', handoverLetter: null, remarks: 'Monitor delivered to workstation' },
+    { name: 'Docking Station', description: 'USB-C docking station with multiple ports', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Pending inventory check' },
+    { name: 'Wireless Keyboard & Mouse', description: 'Logitech MX Keys and MX Master 3 combo', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
+  { id: 36, task: 'Configure Database Access', assignee: 'Nur Iman', due: '2025-10-02', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Set up database access permissions:\n\n• Create database user accounts\n• Assign read/write permissions\n• Configure connection strings\n• Set up database client tools\n• Document access credentials securely', systemAccess: [
+    { name: 'MySQL Database', description: 'Production and staging database access', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'MongoDB Atlas', description: 'NoSQL database cluster access', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Redis Cache', description: 'In-memory data store access', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  // TimeTec Computing - IT/PIC Tasks
+  { id: 37, task: 'Grant ERP System Access', assignee: 'Siti Aminah', due: '2025-09-21', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Configure ERP system access:\n\n• Create SAP user account\n• Assign appropriate roles\n• Set up authorization profiles\n• Configure transaction access\n• Provide system training materials', systemAccess: [
+    { name: 'SAP ERP', description: 'Enterprise Resource Planning system for finance and operations', pic: 'IT Admin', granted: true, grantedAt: '2025-09-20', credentials: { username: 'SITI.AMINAH', password: 'S@P2025!Init' } },
+    { name: 'SAP Business Warehouse', description: 'Business intelligence and reporting system', pic: 'IT Admin', granted: true, grantedAt: '2025-09-20', credentials: { username: 'SITI.AMINAH', password: 'BW@2025!Init' } }
+  ] },
+  { id: 38, task: 'Issue Desktop Computer', assignee: 'Amir Hamzah', due: '2025-09-27', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Issue and configure desktop workstation:\n\n• Prepare desktop PC with required specs\n• Install Windows 11 Pro\n• Install Microsoft Office suite\n• Configure network settings\n• Install department-specific software', assetItems: [
+    { name: 'Desktop Computer', description: 'HP ProDesk 400 G7 with Intel i7, 16GB RAM, 512GB SSD', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Unit being prepared in IT staging area' },
+    { name: 'Monitor Set', description: 'Dual HP 24" monitors with adjustable stands', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
+  { id: 39, task: 'Setup Network Printer Access', assignee: 'Siti Aminah', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Configure network printer access:\n\n• Install printer drivers\n• Add to department print queue\n• Set default printing preferences\n• Configure print quota if applicable\n• Test print functionality' },
+  // FingerTec - IT/PIC Tasks
+  { id: 40, task: 'Setup Time Attendance Terminal Access', assignee: 'Daniel Lee', due: '2025-09-23', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Configure time attendance system:\n\n• Enroll fingerprint in FingerTec terminal\n• Register face recognition profile\n• Set up employee ID in TCMSv3\n• Configure shift schedule\n• Test attendance recording', systemAccess: [
+    { name: 'TCMSv3 Software', description: 'TimeTec Management System for attendance management', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'FingerTec Terminal', description: 'Biometric terminal enrollment and access', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  { id: 41, task: 'Issue Access Control Card', assignee: 'Daniel Lee', due: '2025-09-22', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Issue and configure access control card:\n\n• Program RFID card with employee ID\n• Configure door access permissions\n• Set up floor access levels\n• Register card in access control system\n• Test at all required access points', assetItems: [
+    { name: 'RFID Access Card', description: 'Proximity card for door access control system', pic: 'Security Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Card pending programming' },
+    { name: 'Building Key', description: 'Physical key for designated storage and office areas', pic: 'Facilities', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
+  { id: 42, task: 'Configure CRM System Access', assignee: 'Sarah Ibrahim', due: '2025-10-08', type: 'System/Access', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Set up CRM system access:\n\n• Create Salesforce/HubSpot account\n• Assign user license and role\n• Configure dashboard and reports\n• Set up email integration\n• Import relevant contact lists', systemAccess: [
+    { name: 'Salesforce CRM', description: 'Customer relationship management platform', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'HubSpot Marketing', description: 'Marketing automation and analytics platform', pic: 'Marketing Admin', granted: false, credentials: null }
+  ] },
+  { id: 43, task: 'Issue Mobile Device', assignee: 'Sarah Ibrahim', due: '2025-10-09', type: 'Asset', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Issue and configure company mobile device:\n\n• Prepare smartphone with MDM enrolled\n• Install required business apps\n• Configure email and calendar\n• Set up VPN and security policies\n• Provide device usage guidelines', assetItems: [
+    { name: 'Company Smartphone', description: 'iPhone 15 with corporate MDM profile installed', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Device pending procurement approval' },
+    { name: 'SIM Card', description: 'Corporate mobile plan SIM card', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] }
 ])
 
 // Sample data - Alerts
@@ -2109,12 +2161,33 @@ const employeeActualProgress = computed(() => {
   return Math.round((employeeCompletedTasks.value / employeeTotalTasks.value) * 100)
 })
 
-// Current user for task assignment (would come from auth store in real app)
-const currentUserName = 'Ahmed Fauzi'
-
 // Computed properties for Tasks tabs
 const getTasksAssignedToMe = computed(() => {
-  return filteredTasks.value.filter(task => task.assignedTo === 'HR' || task.assignedTo === 'HR Admin' || task.assignedTo === 'HR Coordinator')
+  const role = currentUserRole.value
+
+  // Filter tasks based on current user's role
+  if (role === 'IT/PIC') {
+    // IT/PIC sees System/Access and Asset type tasks assigned to IT/PIC or IT
+    return filteredTasks.value.filter(task =>
+      task.assignedTo === 'IT/PIC' ||
+      task.assignedTo === 'IT' ||
+      task.assignedTo === 'IT Admin'
+    )
+  } else if (role === 'HR Admin' || role === 'HR Coordinator') {
+    // HR roles see HR-related tasks
+    return filteredTasks.value.filter(task =>
+      task.assignedTo === 'HR' ||
+      task.assignedTo === 'HR Admin' ||
+      task.assignedTo === 'HR Coordinator'
+    )
+  } else if (role === 'Manager') {
+    return filteredTasks.value.filter(task => task.assignedTo === 'Manager')
+  } else if (role === 'Staff (End User)') {
+    return filteredTasks.value.filter(task => task.assignedTo === 'Staff')
+  }
+
+  // Default: show all non-unassigned tasks
+  return filteredTasks.value.filter(task => task.assignedTo && task.assignedTo !== 'Unassigned')
 })
 
 const getTeamTasks = computed(() => {
@@ -2396,7 +2469,7 @@ const resetTask = (task) => {
 }
 
 const assignTaskToMe = (task) => {
-  task.assignedTo = currentUserName
+  task.assignedTo = currentUserName.value
   toast.add({
     severity: 'success',
     summary: 'Task Assigned',
@@ -4526,10 +4599,17 @@ const getAnsweredQuestionsCount = (task) => {
 }
 
 .tasks-tabs :deep(.p-tabview-nav) {
-  background: transparent;
+  background: var(--color-gray-100);
   border: none;
-  gap: 0.5rem;
-  padding: 0 0 0.5rem 0;
+  gap: 0.25rem;
+  padding: 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  width: auto;
+}
+
+.tasks-tabs :deep(.p-tabview-nav-container) {
+  display: inline-block;
 }
 
 .tasks-tabs :deep(.p-tabview-nav-link) {
@@ -4539,21 +4619,24 @@ const getAnsweredQuestionsCount = (task) => {
   font-size: 13px;
   color: var(--color-gray-600);
   border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .tasks-tabs :deep(.p-tabview-nav-link:hover) {
-  background: var(--color-gray-100);
+  background: var(--color-gray-200);
+  color: var(--color-gray-700);
 }
 
 .tasks-tabs :deep(.p-tabview-header.p-highlight .p-tabview-nav-link) {
-  background: var(--color-primary-50);
+  background: white;
   color: var(--color-primary-600);
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .tasks-tabs :deep(.p-tabview-panels) {
   background: transparent;
-  padding: 0.75rem 0 0 0;
+  padding: 1rem 0 0 0;
 }
 
 .tasks-tabs :deep(.p-tabview-ink-bar) {

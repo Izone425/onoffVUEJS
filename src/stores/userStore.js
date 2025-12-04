@@ -61,11 +61,11 @@ const roleDefinitions = [
     userCount: 4,
     lastUpdated: '2025-08-18',
     permissions: {
-      generalSettings: { read: true, write: true },
-      roles: { read: true, write: false },
-      taskTemplates: { read: true, write: true },
-      workflow: { read: true, write: true },
-      auditTrail: { read: true, write: false },
+      generalSettings: { read: false, write: false },
+      roles: { read: false, write: false },
+      taskTemplates: { read: false, write: false },
+      workflow: { read: false, write: false },
+      auditTrail: { read: false, write: false },
       preHireEntry: { read: false, write: false },
       dashboards: { read: true, write: true },
       assignTasks: { read: true, write: true }
@@ -179,13 +179,13 @@ export const useUserStore = defineStore('user', () => {
 
     if (canRead('dashboards')) {
       items.push({
-        label: 'Onboarding Dashboard',
+        label: 'Onboarding',
         path: '/operation/onboarding/dashboard',
         icon: 'pi-sign-in',
         permission: 'dashboards'
       })
       items.push({
-        label: 'Offboarding Dashboard',
+        label: 'Offboarding',
         path: '/operation/offboarding/dashboard',
         icon: 'pi-sign-out',
         permission: 'dashboards'
