@@ -816,19 +816,20 @@
                       :dismissable="true"
                     >
                       <div class="assign-panel-content">
-                        <!-- Search Input -->
-                        <div class="assign-search">
-                          <i class="pi pi-search"></i>
-                          <InputText
-                            v-model="assignSearchQuery"
-                            placeholder="Search..."
-                            class="assign-search-input"
-                            @input="filterAssignOptions"
-                          />
-                        </div>
+                        <!-- Sticky Header: Search + Assign to Me -->
+                        <div class="assign-panel-header">
+                          <!-- Search Input -->
+                          <div class="assign-search">
+                            <i class="pi pi-search"></i>
+                            <InputText
+                              v-model="assignSearchQuery"
+                              placeholder="Search..."
+                              class="assign-search-input"
+                              @input="filterAssignOptions"
+                            />
+                          </div>
 
-                        <!-- Assign to Me Option -->
-                        <div class="assign-section">
+                          <!-- Assign to Me Option -->
                           <div
                             class="assign-option assign-to-me"
                             @click="assignTask(data, 'me', currentUserName); closeAssignPanel(data.id)"
@@ -838,51 +839,54 @@
                           </div>
                         </div>
 
-                        <!-- Departments Section -->
-                        <div class="assign-section" v-if="filteredDepartments.length > 0">
-                          <div class="assign-section-header">
-                            <i class="pi pi-building"></i>
-                            <span>Departments</span>
-                          </div>
-                          <div class="assign-options-list">
-                            <div
-                              v-for="dept in filteredDepartments"
-                              :key="dept.id"
-                              class="assign-option"
-                              @click="assignTask(data, 'department', dept.code); closeAssignPanel(data.id)"
-                            >
-                              <i class="pi pi-users"></i>
-                              <span>{{ dept.name }}</span>
+                        <!-- Scrollable Body: Departments + Employees -->
+                        <div class="assign-panel-body">
+                          <!-- Departments Section -->
+                          <div class="assign-section" v-if="filteredDepartments.length > 0">
+                            <div class="assign-section-header">
+                              <i class="pi pi-building"></i>
+                              <span>Departments</span>
                             </div>
-                          </div>
-                        </div>
-
-                        <!-- Employees Section -->
-                        <div class="assign-section" v-if="filteredEmployees.length > 0">
-                          <div class="assign-section-header">
-                            <i class="pi pi-user-plus"></i>
-                            <span>Employees</span>
-                          </div>
-                          <div class="assign-options-list">
-                            <div
-                              v-for="emp in filteredEmployees"
-                              :key="emp.id"
-                              class="assign-option"
-                              @click="assignTask(data, 'employee', emp.name); closeAssignPanel(data.id)"
-                            >
-                              <i class="pi pi-user"></i>
-                              <div class="employee-option-info">
-                                <span class="employee-name">{{ emp.name }}</span>
-                                <span class="employee-role">{{ emp.role }}</span>
+                            <div class="assign-options-list">
+                              <div
+                                v-for="dept in filteredDepartments"
+                                :key="dept.id"
+                                class="assign-option"
+                                @click="assignTask(data, 'department', dept.code); closeAssignPanel(data.id)"
+                              >
+                                <i class="pi pi-users"></i>
+                                <span>{{ dept.name }}</span>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <!-- No Results -->
-                        <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
-                          <i class="pi pi-info-circle"></i>
-                          <span>No results found</span>
+                          <!-- Employees Section -->
+                          <div class="assign-section" v-if="filteredEmployees.length > 0">
+                            <div class="assign-section-header">
+                              <i class="pi pi-user-plus"></i>
+                              <span>Employees</span>
+                            </div>
+                            <div class="assign-options-list">
+                              <div
+                                v-for="emp in filteredEmployees"
+                                :key="emp.id"
+                                class="assign-option"
+                                @click="assignTask(data, 'employee', emp.name); closeAssignPanel(data.id)"
+                              >
+                                <i class="pi pi-user"></i>
+                                <div class="employee-option-info">
+                                  <span class="employee-name">{{ emp.name }}</span>
+                                  <span class="employee-role">{{ emp.role }}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- No Results -->
+                          <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
+                            <i class="pi pi-info-circle"></i>
+                            <span>No results found</span>
+                          </div>
                         </div>
                       </div>
                     </OverlayPanel>
@@ -1285,6 +1289,58 @@
                   <i class="pi pi-calendar"></i>
                   <span>Granted: {{ system.grantedAt }}</span>
                 </div>
+
+                <!-- IT/PIC Action Section - Only show for IT/PIC users when not granted -->
+                <div v-if="isITPICUser && !system.granted" class="itpic-action-section">
+                  <div class="action-section-header">
+                    <i class="pi pi-key"></i>
+                    <span>Configure Access Credentials</span>
+                  </div>
+                  <div class="credentials-form">
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Username/Email</label>
+                        <InputText
+                          v-model="system.tempCredentials.username"
+                          placeholder="Enter username or email"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Initial Password</label>
+                        <InputText
+                          v-model="system.tempCredentials.password"
+                          placeholder="Enter initial password"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Remarks (Optional)</label>
+                        <Textarea
+                          v-model="system.tempCredentials.remarks"
+                          placeholder="Add any additional notes..."
+                          :rows="2"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                    <div class="action-buttons">
+                      <Button
+                        label="Grant Access"
+                        icon="pi pi-check"
+                        severity="success"
+                        size="small"
+                        @click="grantSystemAccess(system, index)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Show credentials if granted (for all users) -->
                 <div v-if="system.credentials" class="system-credentials">
                   <div class="credentials-header">
                     <i class="pi pi-key"></i>
@@ -1304,6 +1360,18 @@
                       <span class="credential-value">{{ system.credentials.password }}</span>
                     </div>
                   </div>
+                </div>
+
+                <!-- IT/PIC can revoke access if already granted -->
+                <div v-if="isITPICUser && system.granted" class="itpic-revoke-section">
+                  <Button
+                    label="Revoke Access"
+                    icon="pi pi-times"
+                    severity="danger"
+                    size="small"
+                    outlined
+                    @click="revokeSystemAccess(system, index)"
+                  />
                 </div>
               </div>
             </div>
@@ -1354,6 +1422,67 @@
                     <span>Issued: {{ asset.issuedAt }}</span>
                   </div>
                 </div>
+
+                <!-- IT/PIC Action Section - Only show for IT/PIC users when not issued -->
+                <div v-if="isITPICUser && !asset.issued" class="itpic-action-section orange">
+                  <div class="action-section-header">
+                    <i class="pi pi-box"></i>
+                    <span>Issue Asset</span>
+                  </div>
+                  <div class="asset-issue-form">
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Serial Number <span class="required">*</span></label>
+                        <InputText
+                          v-model="asset.tempData.serialNumber"
+                          placeholder="Enter asset serial number"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Remarks (Optional)</label>
+                        <Textarea
+                          v-model="asset.tempData.remarks"
+                          placeholder="Add any notes about this asset..."
+                          :rows="2"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-field">
+                        <label>Hand-over Letter</label>
+                        <div class="file-upload-area">
+                          <input
+                            type="file"
+                            :id="`handover-file-${index}`"
+                            accept=".pdf,.doc,.docx"
+                            @change="(e) => handleHandoverFileUpload(e, asset)"
+                            style="display: none"
+                          />
+                          <label :for="`handover-file-${index}`" class="upload-label">
+                            <i class="pi pi-upload"></i>
+                            <span v-if="!asset.tempData.handoverFile">Click to upload hand-over letter</span>
+                            <span v-else>{{ asset.tempData.handoverFile.name }}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="action-buttons">
+                      <Button
+                        label="Issue Asset"
+                        icon="pi pi-check"
+                        severity="warning"
+                        size="small"
+                        @click="issueAsset(asset, index)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Show issued details (for all users when issued) -->
                 <div v-if="asset.serialNumber" class="asset-serial-section">
                   <div class="serial-header">
                     <i class="pi pi-tag"></i>
@@ -1405,6 +1534,18 @@
                     <span>Remarks</span>
                   </div>
                   <div class="remarks-content">{{ asset.remarks }}</div>
+                </div>
+
+                <!-- IT/PIC can revoke/recall asset if already issued -->
+                <div v-if="isITPICUser && asset.issued" class="itpic-revoke-section">
+                  <Button
+                    label="Recall Asset"
+                    icon="pi pi-undo"
+                    severity="danger"
+                    size="small"
+                    outlined
+                    @click="recallAsset(asset, index)"
+                  />
                 </div>
               </div>
             </div>
@@ -1472,18 +1613,19 @@
               :dismissable="true"
             >
               <div class="assign-panel-content">
-                <!-- Search Input -->
-                <div class="assign-search">
-                  <i class="pi pi-search"></i>
-                  <InputText
-                    v-model="assignSearchQuery"
-                    placeholder="Search..."
-                    class="assign-search-input"
-                  />
-                </div>
+                <!-- Sticky Header: Search + Assign to Me -->
+                <div class="assign-panel-header">
+                  <!-- Search Input -->
+                  <div class="assign-search">
+                    <i class="pi pi-search"></i>
+                    <InputText
+                      v-model="assignSearchQuery"
+                      placeholder="Search..."
+                      class="assign-search-input"
+                    />
+                  </div>
 
-                <!-- Assign to Me Option -->
-                <div class="assign-section">
+                  <!-- Assign to Me Option -->
                   <div
                     class="assign-option assign-to-me"
                     @click="assignTaskFromDrawer('me', currentUserName)"
@@ -1493,51 +1635,54 @@
                   </div>
                 </div>
 
-                <!-- Departments Section -->
-                <div class="assign-section" v-if="filteredDepartments.length > 0">
-                  <div class="assign-section-header">
-                    <i class="pi pi-building"></i>
-                    <span>Departments</span>
-                  </div>
-                  <div class="assign-options-list">
-                    <div
-                      v-for="dept in filteredDepartments"
-                      :key="dept.id"
-                      class="assign-option"
-                      @click="assignTaskFromDrawer('department', dept.code)"
-                    >
-                      <i class="pi pi-users"></i>
-                      <span>{{ dept.name }}</span>
+                <!-- Scrollable Body: Departments + Employees -->
+                <div class="assign-panel-body">
+                  <!-- Departments Section -->
+                  <div class="assign-section" v-if="filteredDepartments.length > 0">
+                    <div class="assign-section-header">
+                      <i class="pi pi-building"></i>
+                      <span>Departments</span>
                     </div>
-                  </div>
-                </div>
-
-                <!-- Employees Section -->
-                <div class="assign-section" v-if="filteredEmployees.length > 0">
-                  <div class="assign-section-header">
-                    <i class="pi pi-user-plus"></i>
-                    <span>Employees</span>
-                  </div>
-                  <div class="assign-options-list">
-                    <div
-                      v-for="emp in filteredEmployees"
-                      :key="emp.id"
-                      class="assign-option"
-                      @click="assignTaskFromDrawer('employee', emp.name)"
-                    >
-                      <i class="pi pi-user"></i>
-                      <div class="employee-option-info">
-                        <span class="employee-name">{{ emp.name }}</span>
-                        <span class="employee-role">{{ emp.role }}</span>
+                    <div class="assign-options-list">
+                      <div
+                        v-for="dept in filteredDepartments"
+                        :key="dept.id"
+                        class="assign-option"
+                        @click="assignTaskFromDrawer('department', dept.code)"
+                      >
+                        <i class="pi pi-users"></i>
+                        <span>{{ dept.name }}</span>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- No Results -->
-                <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
-                  <i class="pi pi-info-circle"></i>
-                  <span>No results found</span>
+                  <!-- Employees Section -->
+                  <div class="assign-section" v-if="filteredEmployees.length > 0">
+                    <div class="assign-section-header">
+                      <i class="pi pi-user-plus"></i>
+                      <span>Employees</span>
+                    </div>
+                    <div class="assign-options-list">
+                      <div
+                        v-for="emp in filteredEmployees"
+                        :key="emp.id"
+                        class="assign-option"
+                        @click="assignTaskFromDrawer('employee', emp.name)"
+                      >
+                        <i class="pi pi-user"></i>
+                        <div class="employee-option-info">
+                          <span class="employee-name">{{ emp.name }}</span>
+                          <span class="employee-role">{{ emp.role }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- No Results -->
+                  <div v-if="assignSearchQuery && filteredDepartments.length === 0 && filteredEmployees.length === 0" class="assign-no-results">
+                    <i class="pi pi-info-circle"></i>
+                    <span>No results found</span>
+                  </div>
                 </div>
               </div>
             </OverlayPanel>
@@ -1756,8 +1901,11 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // Current user role from store
-const currentUserRole = computed(() => userStore.currentUser?.role || 'HR Admin')
+const currentUserRole = computed(() => userStore.currentRole?.name || 'HR Admin')
 const currentUserName = computed(() => userStore.currentUser?.name || 'Ahmed Fauzi')
+
+// Check if current user is IT/PIC
+const isITPICUser = computed(() => currentUserRole.value === 'IT/PIC')
 
 // Companies
 const companies = ref([
@@ -1931,16 +2079,30 @@ const allTasks = ref([
     { name: 'Laptop Computer', description: 'Business laptop with Windows 11, Microsoft Office suite, and essential software pre-installed', pic: 'IT Admin', issued: true, issuedAt: '2025-09-16', serialNumber: 'DELL-XPS15-2025-001234', handoverLetter: { fileName: 'Laptop_Handover_Aina.pdf', uploadedAt: '2025-09-16', signed: true }, remarks: 'Laptop in excellent condition. All software installed and tested.' },
     { name: 'Employee ID Card', description: 'Photo ID card with building access permissions and employee identification number', pic: 'HR Admin', issued: true, issuedAt: '2025-09-16', serialNumber: 'EMP-2025-001234', handoverLetter: { fileName: 'IDCard_Handover_Aina.pdf', uploadedAt: '2025-09-16', signed: true }, remarks: null }
   ] },
-  { id: 20, task: 'Issue Laptop & ID Card', assignee: 'Jessica Wong', due: '2025-09-28', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Prepare and configure laptop for new employee:\n\n• Install standard software suite\n• Configure email client\n• Set up security software\n• Prepare ID card with photo\n• Test all equipment\n\nHave assets ready for collection before start date.' },
+  { id: 20, task: 'Issue Laptop & ID Card', assignee: 'Jessica Wong', due: '2025-09-28', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Prepare and configure laptop for new employee:\n\n• Install standard software suite\n• Configure email client\n• Set up security software\n• Prepare ID card with photo\n• Test all equipment\n\nHave assets ready for collection before start date.', assetItems: [
+    { name: 'Laptop Computer', description: 'Dell XPS 15 with Windows 11 Pro and Office 365 pre-installed', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Laptop being prepared in IT staging area' },
+    { name: 'Employee ID Card', description: 'Photo ID card with building access and attendance functionality', pic: 'HR Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Pending photo submission' }
+  ] },
   // TimeTec Computing tasks
   { id: 14, task: 'Welcome Pack', assignee: 'Siti Aminah', due: '2025-09-19', type: 'General Task', indicator: 'Onboarding', status: 'completed', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Prepare welcome pack with company materials, handbook, and office supplies for the new team member.' },
-  { id: 15, task: 'Setup Company Email', assignee: 'Siti Aminah', due: '2025-09-20', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Create company email account and configure all necessary access permissions for internal systems.' },
-  { id: 16, task: 'Hardware Setup', assignee: 'Amir Hamzah', due: '2025-09-26', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Set up workstation with all required hardware including computer, monitors, keyboard, mouse, and any specialized equipment needed for the role.' },
+  { id: 15, task: 'Setup Company Email', assignee: 'Siti Aminah', due: '2025-09-20', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Create company email account and configure all necessary access permissions for internal systems.', systemAccess: [
+    { name: 'Microsoft Outlook', description: 'Company email account with standard mailbox and calendar access', pic: 'IT Admin', granted: true, grantedAt: '2025-09-19', credentials: { email: 'siti.aminah@timetec.com', password: 'Welcome@2025!' } },
+    { name: 'Microsoft Teams', description: 'Team collaboration and communication platform access', pic: 'IT Admin', granted: true, grantedAt: '2025-09-19', credentials: null }
+  ] },
+  { id: 16, task: 'Hardware Setup', assignee: 'Amir Hamzah', due: '2025-09-26', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Set up workstation with all required hardware including computer, monitors, keyboard, mouse, and any specialized equipment needed for the role.', assetItems: [
+    { name: 'Desktop Computer', description: 'HP ProDesk 400 G7 with Intel i7, 16GB RAM, 512GB SSD', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Unit being configured' },
+    { name: 'Monitor', description: 'Dell 24" Full HD monitor with adjustable stand', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null },
+    { name: 'Keyboard & Mouse', description: 'Wireless keyboard and mouse combo set', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
   { id: 17, task: 'Team Introduction Meeting', assignee: 'Siti Aminah', due: '2025-09-19', type: 'Meeting/Event', indicator: 'Onboarding', status: 'completed', assignedTo: 'Manager', stage: '1st Day-Onboarding', company: 'timetec-computing', description: 'Organize team meeting to introduce the new employee. Include brief presentations from team members about their roles and current projects.' },
   { id: 18, task: 'Complete Training Modules', assignee: 'Siti Aminah', due: '2025-09-22', type: 'General Task', indicator: 'Onboarding', status: 'pending', assignedTo: 'Staff', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Complete all mandatory training modules:\n\n• Company compliance training\n• Security awareness\n• Product knowledge basics\n• System usage tutorials\n\nTrack completion in the learning management system.' },
   // FingerTec tasks
   { id: 19, task: 'Onboarding Checklist Review', assignee: 'Daniel Lee', due: '2025-09-21', type: 'General Task', indicator: 'Onboarding', status: 'completed', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Review and verify completion of all pre-onboarding checklist items before the employee\'s start date.' },
-  { id: 21, task: 'Security Access Setup', assignee: 'Daniel Lee', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Configure security access including building access card, system login credentials, and appropriate permission levels based on role requirements.' },
+  { id: 21, task: 'Security Access Setup', assignee: 'Daniel Lee', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Configure security access including building access card, system login credentials, and appropriate permission levels based on role requirements.', systemAccess: [
+    { name: 'Active Directory', description: 'Windows domain account with group policy access', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Building Access Control', description: 'Access card registration for main entrance and department areas', pic: 'Security Admin', granted: false, credentials: null },
+    { name: 'VPN Access', description: 'Remote access VPN for work from home capability', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
   { id: 22, task: 'Department Tour', assignee: 'Daniel Lee', due: '2025-09-21', type: 'Meeting/Event', indicator: 'Onboarding', status: 'completed', assignedTo: 'Manager', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Conduct a comprehensive tour of the department, introducing the new employee to team members and explaining workflows and collaboration points.' },
   { id: 23, task: 'Company Policy Briefing', assignee: 'Sarah Ibrahim', due: '2025-10-06', type: 'Meeting/Event', indicator: 'Onboarding', status: 'not-started', assignedTo: 'HR Coordinator', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Conduct briefing session covering all company policies:\n\n• Code of conduct\n• Leave policies\n• Performance review process\n• Communication guidelines\n• Dress code\n\nProvide policy handbook and answer questions.' },
   // Unassigned Tasks - TimeTec Cloud
@@ -1986,7 +2148,10 @@ const allTasks = ref([
     { name: 'Desktop Computer', description: 'HP ProDesk 400 G7 with Intel i7, 16GB RAM, 512GB SSD', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Unit being prepared in IT staging area' },
     { name: 'Monitor Set', description: 'Dual HP 24" monitors with adjustable stands', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
   ] },
-  { id: 39, task: 'Setup Network Printer Access', assignee: 'Siti Aminah', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Configure network printer access:\n\n• Install printer drivers\n• Add to department print queue\n• Set default printing preferences\n• Configure print quota if applicable\n• Test print functionality' },
+  { id: 39, task: 'Setup Network Printer Access', assignee: 'Siti Aminah', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Configure network printer access:\n\n• Install printer drivers\n• Add to department print queue\n• Set default printing preferences\n• Configure print quota if applicable\n• Test print functionality', systemAccess: [
+    { name: 'Network Printer - Floor 3', description: 'HP LaserJet Pro MFP for printing, scanning, and copying', pic: 'IT Admin', granted: true, grantedAt: '2025-09-21', credentials: { username: 'PRINTER\\siti.aminah', password: null } },
+    { name: 'Print Management Portal', description: 'Web portal for print job management and quota monitoring', pic: 'IT Admin', granted: true, grantedAt: '2025-09-21', credentials: null }
+  ] },
   // FingerTec - IT/PIC Tasks
   { id: 40, task: 'Setup Time Attendance Terminal Access', assignee: 'Daniel Lee', due: '2025-09-23', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Configure time attendance system:\n\n• Enroll fingerprint in FingerTec terminal\n• Register face recognition profile\n• Set up employee ID in TCMSv3\n• Configure shift schedule\n• Test attendance recording', systemAccess: [
     { name: 'TCMSv3 Software', description: 'TimeTec Management System for attendance management', pic: 'IT Admin', granted: false, credentials: null },
@@ -2003,6 +2168,46 @@ const allTasks = ref([
   { id: 43, task: 'Issue Mobile Device', assignee: 'Sarah Ibrahim', due: '2025-10-09', type: 'Asset', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Issue and configure company mobile device:\n\n• Prepare smartphone with MDM enrolled\n• Install required business apps\n• Configure email and calendar\n• Set up VPN and security policies\n• Provide device usage guidelines', assetItems: [
     { name: 'Company Smartphone', description: 'iPhone 15 with corporate MDM profile installed', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Device pending procurement approval' },
     { name: 'SIM Card', description: 'Corporate mobile plan SIM card', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
+  // Additional IT/PIC Tasks - More variety in status and types
+  // TimeTec Cloud - Additional IT/PIC Tasks
+  { id: 44, task: 'Setup Microsoft 365 Account', assignee: 'Harith Rahman', due: '2025-09-22', type: 'System/Access', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Create and configure Microsoft 365 account:\n\n• Create user account in Azure AD\n• Assign appropriate licenses (E3/E5)\n• Configure email and Teams access\n• Set up OneDrive storage\n• Enable MFA authentication', systemAccess: [
+    { name: 'Microsoft 365', description: 'Office 365 E3 license with full productivity suite', pic: 'IT Admin', granted: true, grantedAt: '2025-09-21', credentials: { email: 'harith.rahman@timetec.com', password: 'M365@Init2025!' } },
+    { name: 'Microsoft Teams', description: 'Team collaboration and video conferencing', pic: 'IT Admin', granted: true, grantedAt: '2025-09-21', credentials: null },
+    { name: 'SharePoint Online', description: 'Document management and intranet access', pic: 'IT Admin', granted: true, grantedAt: '2025-09-21', credentials: null }
+  ] },
+  { id: 45, task: 'Configure VPN Client', assignee: 'Jessica Wong', due: '2025-09-30', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Install and configure VPN for secure remote access:\n\n• Install FortiClient VPN software\n• Configure connection profiles\n• Set up certificate-based authentication\n• Test connectivity to internal resources\n• Provide VPN usage documentation', systemAccess: [
+    { name: 'FortiClient VPN', description: 'Secure VPN client for remote access to corporate network', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Remote Desktop Gateway', description: 'Access to internal servers and applications', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  { id: 46, task: 'Issue Wireless Headset', assignee: 'Nur Iman', due: '2025-10-01', type: 'Asset', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'timetec-cloud', description: 'Issue wireless headset for video calls:\n\n• Prepare Jabra/Poly wireless headset\n• Pair with laptop via Bluetooth/USB\n• Configure audio settings\n• Test with Teams/Zoom\n• Provide user manual', assetItems: [
+    { name: 'Wireless Headset', description: 'Jabra Evolve2 75 wireless headset with ANC', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Unit available in inventory' },
+    { name: 'USB Dongle', description: 'Jabra Link 380 USB adapter for connectivity', pic: 'IT Admin', issued: false, serialNumber: null, handoverLetter: null, remarks: null }
+  ] },
+  { id: 47, task: 'Setup Source Code Repository Access', assignee: 'Jessica Wong', due: '2025-09-29', type: 'System/Access', indicator: 'Onboarding', status: 'overdue', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-cloud', description: 'Grant access to source code repositories:\n\n• Create GitLab/GitHub account\n• Add to relevant project repositories\n• Configure SSH keys\n• Set up code review permissions\n• Provide Git workflow documentation', systemAccess: [
+    { name: 'GitLab Enterprise', description: 'Source code repository and CI/CD platform', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'Jenkins CI', description: 'Continuous integration and deployment server', pic: 'IT Admin', granted: false, credentials: null },
+    { name: 'SonarQube', description: 'Code quality and security analysis platform', pic: 'IT Admin', granted: false, credentials: null }
+  ] },
+  // TimeTec Computing - Additional IT/PIC Tasks
+  { id: 48, task: 'Setup Accounting Software Access', assignee: 'Amir Hamzah', due: '2025-09-28', type: 'System/Access', indicator: 'Onboarding', status: 'in_progress', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'timetec-computing', description: 'Configure access to accounting systems:\n\n• Create user in QuickBooks/Sage\n• Assign role-based permissions\n• Set up report access\n• Configure approval workflows\n• Provide system training', systemAccess: [
+    { name: 'QuickBooks Enterprise', description: 'Accounting and financial management software', pic: 'Finance Admin', granted: true, grantedAt: '2025-09-26', credentials: { username: 'amir.hamzah', password: 'QB@2025Init' } },
+    { name: 'Sage Payroll', description: 'Payroll processing and tax management', pic: 'HR Admin', granted: false, credentials: null }
+  ] },
+  { id: 49, task: 'Issue Backup Hard Drive', assignee: 'Siti Aminah', due: '2025-09-23', type: 'Asset', indicator: 'Onboarding', status: 'completed', assignedTo: 'IT/PIC', stage: 'Next Day-Onboarding', company: 'timetec-computing', description: 'Issue encrypted backup drive for data protection:\n\n• Prepare encrypted external SSD\n• Configure automatic backup schedule\n• Set up BitLocker encryption\n• Test backup and restore\n• Document backup procedures', assetItems: [
+    { name: 'External SSD', description: 'Samsung T7 1TB encrypted portable SSD', pic: 'IT Admin', issued: true, issuedAt: '2025-09-22', serialNumber: 'SAM-T7-2025-008765', handoverLetter: { fileName: 'SSD_Handover_Siti.pdf', uploadedAt: '2025-09-22', signed: true }, remarks: 'BitLocker enabled with recovery key stored in AD' }
+  ] },
+  // FingerTec - Additional IT/PIC Tasks
+  { id: 50, task: 'Configure Door Access Permissions', assignee: 'Daniel Lee', due: '2025-09-24', type: 'System/Access', indicator: 'Onboarding', status: 'in_progress', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Set up door access control permissions:\n\n• Register user in i-Neighbour system\n• Configure access zones and schedules\n• Set up visitor management profile\n• Enable mobile credentialing\n• Test access at all entry points', systemAccess: [
+    { name: 'i-Neighbour Access Control', description: 'Smart door access management system', pic: 'Security Admin', granted: true, grantedAt: '2025-09-23', credentials: { cardNumber: 'AC-2025-001234', pin: '4521' } },
+    { name: 'Visitor Management System', description: 'Guest registration and pre-approval system', pic: 'Reception', granted: false, credentials: null }
+  ] },
+  { id: 51, task: 'Issue Security Token', assignee: 'Sarah Ibrahim', due: '2025-10-10', type: 'Asset', indicator: 'Onboarding', status: 'not-started', assignedTo: 'IT/PIC', stage: 'Pre-Onboarding', company: 'fingertech', description: 'Issue hardware security token for 2FA:\n\n• Prepare YubiKey security key\n• Register with Azure AD/Okta\n• Configure for critical systems\n• Test authentication flow\n• Provide backup codes', assetItems: [
+    { name: 'YubiKey 5 NFC', description: 'Hardware security key for multi-factor authentication', pic: 'IT Security', issued: false, serialNumber: null, handoverLetter: null, remarks: 'Keys ordered, expected delivery in 3 days' }
+  ] },
+  { id: 52, task: 'Setup Inventory Management System', assignee: 'Daniel Lee', due: '2025-09-25', type: 'System/Access', indicator: 'Onboarding', status: 'pending', assignedTo: 'IT/PIC', stage: '1st Day-Onboarding', company: 'fingertech', description: 'Grant access to inventory tracking system:\n\n• Create user account in Fishbowl\n• Assign warehouse permissions\n• Configure barcode scanner\n• Set up inventory alerts\n• Provide training materials', systemAccess: [
+    { name: 'Fishbowl Inventory', description: 'Warehouse and inventory management system', pic: 'Warehouse Admin', granted: false, credentials: null },
+    { name: 'Barcode Scanner App', description: 'Mobile app for inventory scanning', pic: 'IT Admin', granted: false, credentials: null }
   ] }
 ])
 
@@ -2360,6 +2565,22 @@ const openEmployeeTasksDrawer = (employee) => {
 }
 
 const openTaskDetailsDrawer = (task) => {
+  // Initialize temp objects for IT/PIC actions if needed
+  if (task.systemAccess) {
+    task.systemAccess.forEach(system => {
+      if (!system.tempCredentials) {
+        system.tempCredentials = { username: '', password: '', remarks: '' }
+      }
+    })
+  }
+  if (task.assetItems) {
+    task.assetItems.forEach(asset => {
+      if (!asset.tempData) {
+        asset.tempData = { serialNumber: '', remarks: '', handoverFile: null }
+      }
+    })
+  }
+
   selectedTaskForDetails.value = task
   isTaskDetailsDrawerOpen.value = true
 }
@@ -2634,6 +2855,116 @@ const getGrantedSystemsCount = (task) => {
 const getIssuedAssetsCount = (task) => {
   if (!task.assetItems || task.assetItems.length === 0) return 0
   return task.assetItems.filter(asset => asset.issued).length
+}
+
+// IT/PIC Action Functions - System Access
+const grantSystemAccess = (system, index) => {
+  const credentials = system.tempCredentials || {}
+  if (!credentials.username) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing Information',
+      detail: 'Please enter username/email for the access credentials',
+      life: 3000
+    })
+    return
+  }
+
+  // Update the system access
+  system.granted = true
+  system.grantedAt = new Date().toISOString().split('T')[0]
+  system.credentials = {
+    username: credentials.username,
+    email: credentials.username.includes('@') ? credentials.username : null,
+    password: credentials.password || 'TempPass123!'
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Access Granted',
+    detail: `Access to ${system.name} has been granted successfully`,
+    life: 3000
+  })
+}
+
+const revokeSystemAccess = (system, index) => {
+  system.granted = false
+  system.grantedAt = null
+  system.credentials = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Access Revoked',
+    detail: `Access to ${system.name} has been revoked`,
+    life: 3000
+  })
+}
+
+// IT/PIC Action Functions - Asset Management
+const handleHandoverFileUpload = (event, asset) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (!asset.tempData) {
+      asset.tempData = {}
+    }
+    asset.tempData.handoverFile = file
+
+    toast.add({
+      severity: 'info',
+      summary: 'File Selected',
+      detail: `${file.name} selected for upload`,
+      life: 2000
+    })
+  }
+}
+
+const issueAsset = (asset, index) => {
+  const tempData = asset.tempData || {}
+  if (!tempData.serialNumber) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing Information',
+      detail: 'Please enter the serial number for the asset',
+      life: 3000
+    })
+    return
+  }
+
+  // Update the asset
+  asset.issued = true
+  asset.issuedAt = new Date().toISOString().split('T')[0]
+  asset.serialNumber = tempData.serialNumber
+  asset.remarks = tempData.remarks || null
+
+  if (tempData.handoverFile) {
+    asset.handoverLetter = {
+      fileName: tempData.handoverFile.name,
+      uploadedAt: new Date().toISOString().split('T')[0],
+      signed: false
+    }
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Asset Issued',
+    detail: `${asset.name} has been issued successfully`,
+    life: 3000
+  })
+}
+
+const recallAsset = (asset, index) => {
+  asset.issued = false
+  asset.issuedAt = null
+  asset.serialNumber = null
+  asset.handoverLetter = null
+  asset.remarks = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Asset Recalled',
+    detail: `${asset.name} has been marked for recall`,
+    life: 3000
+  })
 }
 
 // Questionnaire helper functions
@@ -3965,6 +4296,117 @@ const getAnsweredQuestionsCount = (task) => {
   border-radius: var(--radius-sm);
 }
 
+/* IT/PIC Action Sections */
+.itpic-action-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border: 1px solid #c4b5fd;
+  border-radius: var(--radius-sm);
+}
+
+.itpic-action-section.orange {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fdba74;
+}
+
+.action-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7c3aed;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed #c4b5fd;
+}
+
+.itpic-action-section.orange .action-section-header {
+  color: #c2410c;
+  border-bottom-color: #fdba74;
+}
+
+.action-section-header i {
+  font-size: 14px;
+}
+
+.credentials-form,
+.asset-issue-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.form-field label .required {
+  color: var(--color-danger);
+}
+
+.form-field :deep(.p-inputtext),
+.form-field :deep(.p-textarea) {
+  font-size: 12px;
+  padding: 0.5rem 0.625rem;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.file-upload-area {
+  border: 1px dashed var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  transition: all 0.2s ease;
+}
+
+.file-upload-area:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.upload-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.upload-label i {
+  color: var(--color-primary);
+}
+
+.itpic-revoke-section {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-gray-300);
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Asset Details Section */
 .asset-details-section {
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
@@ -4741,8 +5183,23 @@ const getAnsweredQuestionsCount = (task) => {
 }
 
 .assign-panel-content {
+  display: flex;
+  flex-direction: column;
   max-height: 400px;
+}
+
+/* Sticky Header: Search + Assign to Me */
+.assign-panel-header {
+  flex-shrink: 0;
+  background: white;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* Scrollable Body: Departments + Employees */
+.assign-panel-body {
+  flex: 1;
   overflow-y: auto;
+  max-height: 280px;
 }
 
 /* Search Input */
@@ -4751,11 +5208,8 @@ const getAnsweredQuestionsCount = (task) => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  border-bottom: 1px solid var(--color-gray-200);
+  border-bottom: 1px solid var(--color-gray-100);
   background: var(--color-gray-50);
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 .assign-search i {
@@ -4807,8 +5261,7 @@ const getAnsweredQuestionsCount = (task) => {
 
 /* Assign Options */
 .assign-options-list {
-  max-height: 150px;
-  overflow-y: auto;
+  /* No individual scroll - single scroll on parent container */
 }
 
 .assign-option {
