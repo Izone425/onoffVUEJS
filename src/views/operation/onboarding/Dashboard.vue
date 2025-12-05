@@ -394,7 +394,7 @@
           <h1 class="dashboard-title">Onboarding Dashboard</h1>
           <p class="dashboard-subtitle">Track new hire progress and manage onboarding tasks</p>
         </div>
-        <div class="header-actions" v-if="currentUserRole !== 'Staff'">
+        <div class="header-actions" v-if="currentUserRole !== 'Staff (End User)'">
           <Button
             icon="pi pi-building"
             :label="`Companies (${selectedCompanies.length})`"
@@ -437,7 +437,7 @@
                   <Tag v-if="selectedStageFilter === 'Pre-Onboarding'" value="Filtered" severity="secondary" class="filter-tag" />
                 </div>
                 <div class="stage-stats">
-                  <span class="stats-text">{{ stageProgress.preOnboarding.completed }} of {{ stageProgress.preOnboarding.total }} employees</span>
+                  <span class="stats-text">{{ stageProgress.preOnboarding.completed }} of {{ stageProgress.preOnboarding.total }} {{ currentUserRole === 'Staff (End User)' ? 'tasks' : 'employees' }}</span>
                   <span class="stats-percentage">{{ stageProgress.preOnboarding.percentage }}%</span>
                 </div>
               </div>
@@ -457,7 +457,7 @@
                   <Tag v-if="selectedStageFilter === '1st Day-Onboarding'" value="Filtered" severity="secondary" class="filter-tag" />
                 </div>
                 <div class="stage-stats">
-                  <span class="stats-text">{{ stageProgress.firstDay.completed }} of {{ stageProgress.firstDay.total }} employees</span>
+                  <span class="stats-text">{{ stageProgress.firstDay.completed }} of {{ stageProgress.firstDay.total }} {{ currentUserRole === 'Staff (End User)' ? 'tasks' : 'employees' }}</span>
                   <span class="stats-percentage">{{ stageProgress.firstDay.percentage }}%</span>
                 </div>
               </div>
@@ -477,7 +477,7 @@
                   <Tag v-if="selectedStageFilter === 'Next Day-Onboarding'" value="Filtered" severity="secondary" class="filter-tag" />
                 </div>
                 <div class="stage-stats">
-                  <span class="stats-text">{{ stageProgress.nextDay.completed }} of {{ stageProgress.nextDay.total }} employees</span>
+                  <span class="stats-text">{{ stageProgress.nextDay.completed }} of {{ stageProgress.nextDay.total }} {{ currentUserRole === 'Staff (End User)' ? 'tasks' : 'employees' }}</span>
                   <span class="stats-percentage">{{ stageProgress.nextDay.percentage }}%</span>
                 </div>
               </div>
@@ -486,8 +486,8 @@
           </div>
         </div>
 
-        <!-- Overdue Tasks Card -->
-        <div class="kpi-card">
+        <!-- For Non-Staff Users: Overdue Tasks Card -->
+        <div v-if="currentUserRole !== 'Staff (End User)'" class="kpi-card">
           <div class="kpi-card-header">
             <i class="pi pi-exclamation-triangle" style="color: #dc2626;"></i>
             <span>Overdue Tasks</span>
@@ -521,8 +521,45 @@
           </div>
         </div>
 
-        <!-- Alerts Card -->
-        <div class="kpi-card">
+        <!-- For Staff Users: Completed Tasks Card -->
+        <div v-if="currentUserRole === 'Staff (End User)'" class="kpi-card">
+          <div class="kpi-card-header">
+            <i class="pi pi-check-circle" style="color: #16a34a;"></i>
+            <span>Completed Tasks</span>
+          </div>
+          <div class="kpi-card-content">
+            <div class="staff-stat-content">
+              <div class="staff-stat-info">
+                <div class="staff-stat-value">{{ staffCompletedTasks.length }}</div>
+                <div class="staff-stat-label">Tasks completed</div>
+              </div>
+            </div>
+            <div v-if="staffCompletedTasks.length > 0" class="staff-tasks-list">
+              <div
+                v-for="task in staffCompletedTasks.slice(0, 3)"
+                :key="task.id"
+                class="staff-task-item completed"
+                @click="openTaskDetailsDrawer(task)"
+              >
+                <div class="staff-task-content">
+                  <span class="staff-task-name">{{ task.task }}</span>
+                  <span class="staff-task-meta">{{ task.type }} • {{ task.stage }}</span>
+                </div>
+                <i class="pi pi-eye"></i>
+              </div>
+              <p v-if="staffCompletedTasks.length > 3" class="staff-tasks-more">
+                +{{ staffCompletedTasks.length - 3 }} more completed
+              </p>
+            </div>
+            <div v-else class="no-staff-tasks">
+              <i class="pi pi-info-circle"></i>
+              <span>No completed tasks yet</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- For Non-Staff Users: Alerts Card -->
+        <div v-if="currentUserRole !== 'Staff (End User)'" class="kpi-card">
           <div class="kpi-card-header">
             <i class="pi pi-bell" style="color: #f59e0b;"></i>
             <span>Alerts</span>
@@ -546,10 +583,47 @@
             </div>
           </div>
         </div>
+
+        <!-- For Staff Users: Not Started Card -->
+        <div v-if="currentUserRole === 'Staff (End User)'" class="kpi-card">
+          <div class="kpi-card-header">
+            <i class="pi pi-clock" style="color: #6366f1;"></i>
+            <span>Not Started</span>
+          </div>
+          <div class="kpi-card-content">
+            <div class="staff-stat-content">
+              <div class="staff-stat-info">
+                <div class="staff-stat-value">{{ staffNotStartedTasks.length }}</div>
+                <div class="staff-stat-label">Tasks not started</div>
+              </div>
+            </div>
+            <div v-if="staffNotStartedTasks.length > 0" class="staff-tasks-list">
+              <div
+                v-for="task in staffNotStartedTasks.slice(0, 3)"
+                :key="task.id"
+                class="staff-task-item not-started"
+                @click="openTaskDetailsDrawer(task)"
+              >
+                <div class="staff-task-content">
+                  <span class="staff-task-name">{{ task.task }}</span>
+                  <span class="staff-task-meta">{{ task.type }} • Due: {{ task.due }}</span>
+                </div>
+                <i class="pi pi-eye"></i>
+              </div>
+              <p v-if="staffNotStartedTasks.length > 3" class="staff-tasks-more">
+                +{{ staffNotStartedTasks.length - 3 }} more to start
+              </p>
+            </div>
+            <div v-else class="no-staff-tasks success">
+              <i class="pi pi-check-circle"></i>
+              <span>All tasks have been started!</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Onboarding Progress Table -->
-      <div class="content-card" v-if="currentUserRole !== 'Staff'">
+      <div class="content-card" v-if="currentUserRole !== 'Staff (End User)'">
         <div class="card-header">
           <div class="card-title-section" @click="showProgressByNewHire = true">
             <h2 class="card-title">Onboarding Progress</h2>
@@ -613,7 +687,7 @@
         <div class="card-header">
           <div>
             <h2 class="card-title">Tasks</h2>
-            <p v-if="currentUserRole === 'Staff'" class="card-subtitle">Tasks assigned specifically to you</p>
+            <p v-if="currentUserRole === 'Staff (End User)'" class="card-subtitle">Tasks assigned specifically to you</p>
           </div>
           <Button
             icon="pi pi-filter"
@@ -625,7 +699,7 @@
         </div>
 
         <!-- Tabbed View for HR Admin -->
-        <TabView v-if="currentUserRole !== 'Staff'" v-model:activeIndex="tasksViewTab" class="tasks-tabs">
+        <TabView v-if="currentUserRole !== 'Staff (End User)'" v-model:activeIndex="tasksViewTab" class="tasks-tabs">
           <!-- Assigned to Me Tab -->
           <TabPanel header="Assigned to Me">
             <DataTable :value="getTasksAssignedToMe" stripedRows responsiveLayout="scroll" class="tasks-table">
@@ -927,7 +1001,7 @@
                   <span class="task-assignee"><i class="pi pi-user"></i> {{ task.assignedTo }}</span>
                   <span class="task-due"><i class="pi pi-calendar"></i> {{ task.due }}</span>
                 </div>
-                <div class="task-item-actions" @click.stop>
+                <div v-if="!isStaffUser" class="task-item-actions" @click.stop>
                   <Button
                     v-if="task.status !== 'completed'"
                     icon="pi pi-check"
@@ -1696,8 +1770,8 @@
             />
           </template>
 
-          <!-- Assigned Task Actions -->
-          <template v-else>
+          <!-- Assigned Task Actions (hidden for Staff users - PIC handles completion) -->
+          <template v-else-if="!isStaffUser">
             <Button
               v-if="selectedTaskForDetails.status === 'completed'"
               icon="pi pi-refresh"
@@ -1716,6 +1790,7 @@
               />
               <div class="action-buttons-row">
                 <Button
+                  v-if="!(isITPICUser && (selectedTaskForDetails.type === 'System/Access' || selectedTaskForDetails.type === 'System' || selectedTaskForDetails.type === 'Asset'))"
                   icon="pi pi-bell"
                   label="Nudge"
                   severity="secondary"
@@ -1906,6 +1981,7 @@ const currentUserName = computed(() => userStore.currentUser?.name || 'Ahmed Fau
 
 // Check if current user is IT/PIC
 const isITPICUser = computed(() => currentUserRole.value === 'IT/PIC')
+const isStaffUser = computed(() => currentUserRole.value === 'Staff (End User)')
 
 // Companies
 const companies = ref([
@@ -2296,16 +2372,48 @@ const progressFilteredNewHires = computed(() => {
 })
 
 const filteredTasks = computed(() => {
-  return allTasks.value.filter(task => selectedCompanies.value.includes(task.company))
+  let tasks = allTasks.value.filter(task => selectedCompanies.value.includes(task.company))
+
+  // For Staff users, only show their own tasks
+  if (currentUserRole.value === 'Staff (End User)') {
+    tasks = tasks.filter(task => task.assignee === currentUserName.value)
+  }
+
+  return tasks
 })
 
 const filteredAlerts = computed(() => {
-  return allAlerts.value.filter(alert => selectedCompanies.value.includes(alert.company))
+  let alerts = allAlerts.value.filter(alert => selectedCompanies.value.includes(alert.company))
+
+  // For Staff users, only show alerts related to them
+  if (currentUserRole.value === 'Staff (End User)') {
+    alerts = alerts.filter(alert =>
+      alert.message.toLowerCase().includes(currentUserName.value.toLowerCase())
+    )
+  }
+
+  return alerts
 })
 
 const stageProgress = computed(() => {
   const calculateStageProgress = (stage) => {
     const stageTasks = filteredTasks.value.filter(task => task.stage === stage)
+
+    // For Staff users, show task-based progress (completed tasks / total tasks)
+    if (currentUserRole.value === 'Staff (End User)') {
+      if (stageTasks.length === 0) {
+        return { completed: 0, total: 0, percentage: 0 }
+      }
+
+      const completedTasks = stageTasks.filter(task => task.status === 'completed').length
+      return {
+        completed: completedTasks,
+        total: stageTasks.length,
+        percentage: Math.round((completedTasks / stageTasks.length) * 100)
+      }
+    }
+
+    // For other roles, show employee-based progress
     const employeesInStage = [...new Set(stageTasks.map(task => task.assignee))]
 
     if (employeesInStage.length === 0) {
@@ -2341,6 +2449,15 @@ const overdueTasks = computed(() => {
     total: overdue.length,
     tasks: overdue
   }
+})
+
+// Staff-specific computed properties for KPI cards
+const staffCompletedTasks = computed(() => {
+  return filteredTasks.value.filter(task => task.status === 'completed')
+})
+
+const staffNotStartedTasks = computed(() => {
+  return filteredTasks.value.filter(task => task.status === 'not-started')
 })
 
 const selectedWorkflow = computed(() => {
@@ -2508,7 +2625,10 @@ const getTasksByStage = (stage) => {
 }
 
 const getMyTasksByStage = (stage) => {
-  return filteredTasks.value.filter(task => task.stage === stage)
+  // For Staff users, only show tasks assigned to them
+  return filteredTasks.value.filter(task =>
+    task.stage === stage && task.assignee === currentUserName.value
+  )
 }
 
 const getEmployeeTasksByStage = (stage) => {
@@ -3270,6 +3390,139 @@ const getAnsweredQuestionsCount = (task) => {
   color: var(--color-gray-500);
   text-align: center;
   margin-top: 0.375rem;
+}
+
+/* Staff KPI Cards */
+.staff-stat-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.staff-stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staff-stat-info {
+  flex: 1;
+}
+
+.staff-stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.staff-stat-label {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+}
+
+.staff-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.staff-task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.staff-task-item.completed {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.staff-task-item.completed:hover {
+  background: #dcfce7;
+}
+
+.staff-task-item.not-started {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.staff-task-item.not-started:hover {
+  background: #e0e7ff;
+}
+
+.staff-task-item i {
+  color: var(--color-gray-400);
+  font-size: 0.875rem;
+}
+
+.staff-task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.staff-task-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+
+.staff-task-item.completed .staff-task-name {
+  color: #166534;
+}
+
+.staff-task-item.not-started .staff-task-name {
+  color: #4338ca;
+}
+
+.staff-task-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.staff-task-item.completed .staff-task-meta {
+  color: #15803d;
+}
+
+.staff-task-item.not-started .staff-task-meta {
+  color: #6366f1;
+}
+
+.staff-tasks-more {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.no-staff-tasks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--color-gray-500);
+  font-size: 12px;
+}
+
+.no-staff-tasks i {
+  font-size: 2rem;
+  color: var(--color-gray-400);
+  margin-bottom: 0.375rem;
+}
+
+.no-staff-tasks.success i {
+  color: #16a34a;
 }
 
 /* Content Card */
