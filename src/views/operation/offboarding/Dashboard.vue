@@ -347,7 +347,7 @@
               </div>
             </div>
           </Popover>
-          <Button icon="pi pi-users" label="Assign Offboarding Workflow" @click="isAssignDrawerOpen = true" />
+          <Button icon="pi pi-users" label="Assign Offboarding Workflow" class="offboarding-btn" @click="isAssignDrawerOpen = true" />
         </div>
       </div>
 
@@ -1192,7 +1192,7 @@ const allTasks = ref([
   { id: 2, task: 'Revoke System Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke all system access including email, network, and applications.' },
   { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.' },
   { id: 4, task: 'Final Pay Calculation', assignee: 'Siti Rahmah', due: '2025-09-18', type: 'General', indicator: 'Offboarding', status: 'pending', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Calculate final pay including prorated salary, unused leave, and any deductions.' },
-  { id: 5, task: 'Knowledge Transfer', assignee: 'Zulkifli Hassan', due: '2025-09-08', type: 'Document', indicator: 'Offboarding', status: 'overdue', assignedTo: 'Manager', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete knowledge transfer documentation and handover to replacement.' },
+  { id: 5, task: 'Knowledge Transfer', assignee: 'Zulkifli Hassan', due: '2025-09-08', type: 'Checklist', indicator: 'Offboarding', status: 'overdue', assignedTo: 'Manager', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete knowledge transfer documentation and handover to replacement.' },
   { id: 6, task: 'Benefits Termination', assignee: 'Ahmad Razak', due: '2025-10-01', type: 'General', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'HR Admin', stage: 'Last Day-Offboarding', company: 'timetec-computing', description: 'Process termination of all employee benefits.' },
   { id: 7, task: 'Resignation Letter Filing', assignee: 'Siti Rahmah', due: '2025-09-15', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'File resignation letter and related documentation.' },
   { id: 8, task: 'Exit Survey', assignee: 'Zulkifli Hassan', due: '2025-09-11', type: 'Questionnaire', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete the exit survey questionnaire.' },
@@ -1510,6 +1510,7 @@ const resetProgressFilters = () => {
 const viewEmployeeTasks = (employee) => {
   selectedEmployee.value = employee
   showEmployeeTasksPage.value = true
+  showProgressByLeaver.value = false
 }
 
 const openEmployeeTasksDrawer = (employee) => {
@@ -2543,5 +2544,20 @@ const handleAssignWorkflow = () => {
   font-style: italic;
   background: var(--color-gray-50);
   border-radius: var(--radius-md);
+}
+
+/* Offboarding Button Style */
+.offboarding-btn {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.offboarding-btn:hover {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+
+.offboarding-btn:focus {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #fca5a5 !important;
 }
 </style>

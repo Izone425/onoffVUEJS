@@ -143,6 +143,7 @@
         v-model:selectedDocuments="selectedDocuments"
         v-model:requirements="documentRequirements"
         :viewMode="isViewMode"
+        :indicator="formData.category"
       />
 
       <!-- System/Access Configuration - Only for System/Access -->
@@ -447,13 +448,24 @@ const populateTypeSpecificData = (template) => {
 
 // Populate document form data
 const populateDocumentData = (template) => {
-  // Check if template has document configuration data
-  if (template.documentConfig) {
+  // Check if template has document configuration data directly on template
+  if (template.requiresDocumentUpload !== undefined) {
+    requiresDocumentUpload.value = template.requiresDocumentUpload || false
+    selectedDocuments.value = template.selectedDocuments || []
+    documentRequirements.value = template.documentRequirements || {}
+  } else if (template.documentConfig) {
     requiresDocumentUpload.value = template.documentConfig.requiresUpload || false
     selectedDocuments.value = template.documentConfig.selectedDocuments || []
     documentRequirements.value = template.documentConfig.requirements || {}
+  } else if (template.indicator === 'offboarding') {
+    // Default for offboarding document tasks - Resignation Letter
+    requiresDocumentUpload.value = true
+    selectedDocuments.value = ['resignation-letter']
+    documentRequirements.value = {
+      'resignation-letter': true
+    }
   } else {
-    // Provide realistic mock data based on template name/id
+    // Provide realistic mock data based on template name/id for onboarding
     requiresDocumentUpload.value = true
 
     if (template.name?.toLowerCase().includes('handbook') || template.id === 2) {

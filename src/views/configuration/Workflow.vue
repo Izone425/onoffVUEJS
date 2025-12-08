@@ -62,7 +62,7 @@
                 {{ data.taskCount }} tasks
               </template>
             </Column>
-            <Column field="status" header="Status" style="min-width: 120px">
+            <Column field="status" header="Active" style="min-width: 120px">
               <template #body="{ data }">
                 <div class="status-toggle">
                   <InputSwitch
@@ -107,7 +107,7 @@
                     <span class="detail-value">{{ workflow.taskCount }} tasks</span>
                   </div>
                   <div class="detail-row">
-                    <span class="detail-label">Status:</span>
+                    <span class="detail-label">Active:</span>
                     <div class="status-toggle" @click.stop>
                       <InputSwitch
                         :modelValue="workflow.status === 'active'"

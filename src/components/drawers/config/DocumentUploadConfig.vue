@@ -130,6 +130,10 @@ const props = defineProps({
   viewMode: {
     type: Boolean,
     default: false
+  },
+  indicator: {
+    type: String,
+    default: 'onboarding' // 'onboarding' or 'offboarding'
   }
 })
 
@@ -154,7 +158,8 @@ const isAddingDocument = ref(false)
 const newDocumentName = ref('')
 const customDocuments = ref([])
 
-const predefinedDocuments = [
+// Onboarding documents
+const onboardingDocuments = [
   { id: 'ic', label: 'IC (Identity Card)' },
   { id: 'passport', label: 'Passport' },
   { id: 'work-permit', label: 'Work Permit' },
@@ -164,8 +169,17 @@ const predefinedDocuments = [
   { id: 'tp3', label: 'TP3' }
 ]
 
+// Offboarding documents
+const offboardingDocuments = [
+  { id: 'resignation-letter', label: 'Resignation Letter' }
+]
+
+const predefinedDocuments = computed(() => {
+  return props.indicator === 'offboarding' ? offboardingDocuments : onboardingDocuments
+})
+
 const allDocuments = computed(() => {
-  return [...predefinedDocuments, ...customDocuments.value]
+  return [...predefinedDocuments.value, ...customDocuments.value]
 })
 
 const getDocumentLabel = (docId) => {

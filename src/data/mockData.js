@@ -419,6 +419,26 @@ export const taskTemplates = [
     createdAt: '2025-09-15',
     updatedAt: '2025-09-18',
     isActive: true
+  },
+  {
+    id: 16,
+    name: 'Resignation Letter',
+    description: 'Submit resignation letter as compulsory document',
+    type: 'document',
+    indicator: 'offboarding',
+    ownerRole: 'Staff',
+    defaultAssignee: null,
+    sla: 2,
+    mandatory: true,
+    dependencies: [],
+    acknowledgementType: 'sign_off',
+    requireESign: true,
+    requiresDocumentUpload: true,
+    selectedDocuments: ['resignation-letter'],
+    documentRequirements: { 'resignation-letter': true },
+    createdAt: '2025-09-20',
+    updatedAt: '2025-09-22',
+    isActive: true
   }
 ]
 

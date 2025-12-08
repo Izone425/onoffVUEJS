@@ -123,7 +123,7 @@
                 <span class="date-text">{{ formatDate(data.updatedAt) }}</span>
               </template>
             </Column>
-            <Column field="isActive" header="Status" style="min-width: 110px">
+            <Column field="isActive" header="Active" style="min-width: 110px">
               <template #body="{ data }">
                 <div class="status-toggle">
                   <InputSwitch
@@ -201,7 +201,7 @@
                     <span class="detail-value">{{ template.sla }} days</span>
                   </div>
                   <div class="detail-row">
-                    <span class="detail-label">Status:</span>
+                    <span class="detail-label">Active:</span>
                     <div class="status-toggle" @click.stop>
                       <InputSwitch
                         :modelValue="template.isActive !== false"

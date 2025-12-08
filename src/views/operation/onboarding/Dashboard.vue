@@ -1131,12 +1131,22 @@
             </div>
             <div class="task-card-actions">
               <Button
+                icon="pi pi-eye"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                title="View Details"
+                @click="openTaskDetailsDrawer(task); isEmployeeTasksDrawerOpen = false"
+              />
+              <Button
                 v-if="task.status !== 'completed'"
                 icon="pi pi-bell"
                 severity="info"
                 text
                 rounded
                 size="small"
+                title="Send Reminder"
                 @click="sendReminder(task)"
               />
               <Button
@@ -1146,6 +1156,7 @@
                 text
                 rounded
                 size="small"
+                title="Mark Complete"
                 @click="completeTask(task)"
               />
               <Button
@@ -1155,6 +1166,7 @@
                 text
                 rounded
                 size="small"
+                title="Delete"
                 @click="deleteTask(task)"
               />
               <Button
@@ -1164,6 +1176,7 @@
                 text
                 rounded
                 size="small"
+                title="Reset"
                 @click="resetTask(task)"
               />
             </div>
