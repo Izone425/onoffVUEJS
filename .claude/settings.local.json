@@ -8,7 +8,11 @@
       "Bash(git push:*)",
       "Bash(npm run dev:*)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(dir \"C:\\Users\\Muhammad Izzuwan\\Documents\\TIMETEC HRV2\\Onboarding offboarding claude\" /B)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

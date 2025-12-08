@@ -911,6 +911,182 @@
           </div>
         </div>
 
+        <!-- Required Items Section (for Document type tasks) -->
+        <div v-if="selectedTaskForDetails.requiredItems && selectedTaskForDetails.requiredItems.length > 0" class="required-items-section">
+          <div class="required-items-header">
+            <i class="pi pi-file-check"></i>
+            <span>Required Items</span>
+            <Tag
+              :value="`${getCompletedItemsCount(selectedTaskForDetails)}/${selectedTaskForDetails.requiredItems.length}`"
+              :severity="getCompletedItemsCount(selectedTaskForDetails) === selectedTaskForDetails.requiredItems.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="required-items-list">
+            <div
+              v-for="(item, index) in selectedTaskForDetails.requiredItems"
+              :key="index"
+              class="required-item-card"
+              :class="{ 'item-completed': item.completed, 'item-compulsory': item.isCompulsory }"
+            >
+              <div class="item-header">
+                <span class="item-label">{{ item.name }}</span>
+                <div class="item-badges">
+                  <Tag
+                    :value="item.isCompulsory ? 'Compulsory' : 'Optional'"
+                    :severity="item.isCompulsory ? 'danger' : 'secondary'"
+                    class="compulsory-tag"
+                  />
+                  <i v-if="item.completed" class="pi pi-check-circle item-check-icon"></i>
+                </div>
+              </div>
+              <!-- Uploaded File Section (visible for HR Admin) -->
+              <div v-if="item.uploadedFile && !isStaffUser" class="uploaded-file-section">
+                <div class="file-preview">
+                  <div class="file-icon-wrapper">
+                    <i :class="['pi', getFileIcon(item.uploadedFile.type)]"></i>
+                  </div>
+                  <div class="file-info">
+                    <span class="file-name">{{ item.uploadedFile.name }}</span>
+                    <span class="file-meta">
+                      {{ item.uploadedFile.size }} • Uploaded {{ item.uploadedFile.uploadedAt }}
+                    </span>
+                  </div>
+                  <div class="file-actions">
+                    <Button
+                      icon="pi pi-eye"
+                      severity="secondary"
+                      text
+                      size="small"
+                      title="Preview"
+                      @click="previewFile(item.uploadedFile)"
+                    />
+                    <Button
+                      icon="pi pi-download"
+                      severity="secondary"
+                      text
+                      size="small"
+                      title="Download"
+                      @click="downloadFile(item.uploadedFile)"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- No File Uploaded -->
+              <div v-else-if="!item.uploadedFile" class="no-file-section">
+                <i class="pi pi-inbox"></i>
+                <span>No file uploaded yet</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questionnaire Section (for Questionnaire type tasks) -->
+        <div v-if="selectedTaskForDetails.questionnaire && selectedTaskForDetails.questionnaire.length > 0" class="questionnaire-section">
+          <div class="questionnaire-header">
+            <i class="pi pi-question-circle"></i>
+            <span>Questionnaire Responses</span>
+            <Tag
+              :value="`${getAnsweredQuestionsCount(selectedTaskForDetails)}/${selectedTaskForDetails.questionnaire.length}`"
+              :severity="getAnsweredQuestionsCount(selectedTaskForDetails) === selectedTaskForDetails.questionnaire.length ? 'success' : 'warning'"
+            />
+          </div>
+
+          <!-- Read-only View for HR Admin -->
+          <div class="questionnaire-list">
+            <div
+              v-for="(question, index) in selectedTaskForDetails.questionnaire"
+              :key="index"
+              class="question-card"
+              :class="{ 'question-answered': question.answer }"
+            >
+              <div class="question-card-header">
+                <div class="question-info">
+                  <span class="question-number">Q{{ index + 1 }}</span>
+                  <span class="question-text">{{ question.question }}</span>
+                </div>
+              </div>
+              <div class="question-meta">
+                <Tag :value="question.type" severity="secondary" class="type-tag" />
+                <Tag
+                  :value="question.required ? 'Required' : 'Optional'"
+                  :severity="question.required ? 'info' : 'secondary'"
+                  class="required-tag"
+                />
+              </div>
+              <div v-if="question.answer" class="question-answer-section">
+                <div class="answer-header">
+                  <span>Answer</span>
+                </div>
+                <div class="answer-content">{{ question.answer }}</div>
+              </div>
+              <div v-else class="question-no-answer">
+                <i class="pi pi-clock"></i>
+                <span>Awaiting response</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Access Section (for System/Access type tasks - Offboarding) -->
+        <div v-if="selectedTaskForDetails.systemAccess && selectedTaskForDetails.systemAccess.length > 0" class="system-access-section offboarding">
+          <div class="system-access-header">
+            <i class="pi pi-lock"></i>
+            <span>System Access Revocation</span>
+            <Tag
+              :value="`${getRevokedSystemsCount(selectedTaskForDetails)}/${selectedTaskForDetails.systemAccess.length}`"
+              :severity="getRevokedSystemsCount(selectedTaskForDetails) === selectedTaskForDetails.systemAccess.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="system-access-list">
+            <div
+              v-for="(system, index) in selectedTaskForDetails.systemAccess"
+              :key="index"
+              class="system-access-card"
+              :class="{ 'system-revoked': system.revoked }"
+            >
+              <div class="system-card-header">
+                <div class="system-info">
+                  <span class="system-number">#{{ index + 1 }}</span>
+                  <span class="system-name">{{ system.name }}</span>
+                </div>
+                <div class="system-status-badge">
+                  <Tag
+                    :value="system.revoked ? 'Revoked' : 'Pending'"
+                    :severity="system.revoked ? 'success' : 'warning'"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div v-if="system.description" class="system-description">
+                {{ system.description }}
+              </div>
+              <div class="system-details">
+                <div class="system-detail-item">
+                  <i class="pi pi-user"></i>
+                  <span>PIC: <strong>{{ system.pic }}</strong></span>
+                </div>
+                <div v-if="system.revokedAt" class="system-detail-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>Revoked: {{ system.revokedAt }}</span>
+                </div>
+                <div v-if="system.revokedBy" class="system-detail-item">
+                  <i class="pi pi-user-edit"></i>
+                  <span>Revoked by: <strong>{{ system.revokedBy }}</strong></span>
+                </div>
+              </div>
+              <!-- Revocation status indicator -->
+              <div v-if="system.revoked" class="revocation-confirmed">
+                <i class="pi pi-check-circle"></i>
+                <span>Access successfully revoked</span>
+              </div>
+              <div v-else class="revocation-pending">
+                <i class="pi pi-clock"></i>
+                <span>Awaiting revocation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="task-actions-section" v-if="!isStaffUser">
           <Button
@@ -1189,13 +1365,26 @@ const allLeavers = ref([
 // Tasks data
 const allTasks = ref([
   { id: 1, task: 'Exit Interview', assignee: 'Zulkifli Hassan', due: '2025-09-10', type: 'Meeting/Event', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Conduct exit interview to gather feedback and understand reasons for leaving.' },
-  { id: 2, task: 'Revoke System Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke all system access including email, network, and applications.' },
+  { id: 2, task: 'Revoke System Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke all system access including email, network, and applications.', systemAccess: [
+    { name: 'Corporate Email (Outlook)', description: 'Disable email account and remove from distribution lists', pic: 'IT Admin', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
+    { name: 'HRMS Portal', description: 'Revoke access to HR Management System', pic: 'HR Admin', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
+    { name: 'SharePoint & OneDrive', description: 'Remove cloud storage access and transfer files to manager', pic: 'IT Admin', revoked: true, revokedAt: '2025-09-12', revokedBy: 'David Kim' },
+    { name: 'VPN Access', description: 'Disable remote network access', pic: 'IT Admin', revoked: false },
+    { name: 'Jira & Confluence', description: 'Remove from project boards and revoke documentation access', pic: 'IT Admin', revoked: false }
+  ] },
   { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.' },
   { id: 4, task: 'Final Pay Calculation', assignee: 'Siti Rahmah', due: '2025-09-18', type: 'General', indicator: 'Offboarding', status: 'pending', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Calculate final pay including prorated salary, unused leave, and any deductions.' },
   { id: 5, task: 'Knowledge Transfer', assignee: 'Zulkifli Hassan', due: '2025-09-08', type: 'Checklist', indicator: 'Offboarding', status: 'overdue', assignedTo: 'Manager', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete knowledge transfer documentation and handover to replacement.' },
   { id: 6, task: 'Benefits Termination', assignee: 'Ahmad Razak', due: '2025-10-01', type: 'General', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'HR Admin', stage: 'Last Day-Offboarding', company: 'timetec-computing', description: 'Process termination of all employee benefits.' },
   { id: 7, task: 'Resignation Letter Filing', assignee: 'Siti Rahmah', due: '2025-09-15', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'File resignation letter and related documentation.' },
-  { id: 8, task: 'Exit Survey', assignee: 'Zulkifli Hassan', due: '2025-09-11', type: 'Questionnaire', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete the exit survey questionnaire.' },
+  { id: 8, task: 'Exit Survey', assignee: 'Zulkifli Hassan', due: '2025-09-11', type: 'Questionnaire', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete the exit survey questionnaire.', questionnaire: [
+    { question: 'What is your primary reason for leaving?', type: 'Picklist (Single)', required: true, answer: 'Career advancement' },
+    { question: 'How would you rate your overall experience working here?', type: 'Picklist (Single)', required: true, answer: 'Good' },
+    { question: 'Which aspects of your job did you enjoy the most?', type: 'Picklist (Multiple)', required: false, answer: 'Team collaboration, Learning opportunities, Work environment' },
+    { question: 'Would you recommend this company as a good place to work?', type: 'Picklist (Single)', required: true, answer: 'Probably yes' },
+    { question: 'What suggestions do you have for improving the workplace?', type: 'Text (Multiple Lines)', required: false, answer: 'I think the company could benefit from more flexible work arrangements and better career development programs. Overall, it has been a great experience working here and I appreciate all the support from my team.' }
+  ] },
+  { id: 13, task: 'Resignation Letter', assignee: 'Zulkifli Hassan', due: '2025-09-05', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Submit resignation letter as compulsory document for offboarding process.', requiredItems: [{ name: 'Resignation Letter', isCompulsory: true, completed: true, uploadedFile: { name: 'Resignation_Letter_Zulkifli_Hassan.pdf', type: 'pdf', size: '245 KB', uploadedAt: '2025-09-03' } }] },
   { id: 9, task: 'Clearance Form', assignee: 'Ahmad Razak', due: '2025-10-01', type: 'Information', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-computing', description: 'Complete the clearance form with all required signatures.' },
   { id: 10, task: 'Reference Letter Request', assignee: 'Nurul Aina', due: '2025-10-15', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Post-Offboarding', company: 'fingertech', description: 'Process reference letter request.' },
   { id: 11, task: 'Revoke Building Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke building access card and parking access.' },
@@ -1567,6 +1756,59 @@ const sendReminder = (task) => {
     detail: `Reminder sent for ${task.task}`,
     life: 3000
   })
+}
+
+// Get completed items count for document tasks
+const getCompletedItemsCount = (task) => {
+  if (!task.requiredItems) return 0
+  return task.requiredItems.filter(item => item.completed).length
+}
+
+// Get file icon based on type
+const getFileIcon = (type) => {
+  switch (type) {
+    case 'pdf': return 'pi-file-pdf'
+    case 'image': return 'pi-image'
+    case 'doc':
+    case 'docx': return 'pi-file-word'
+    case 'xls':
+    case 'xlsx': return 'pi-file-excel'
+    default: return 'pi-file'
+  }
+}
+
+// Preview file
+const previewFile = (file) => {
+  toast.add({
+    severity: 'info',
+    summary: 'Opening Preview',
+    detail: `Opening ${file.name} in preview mode`,
+    life: 3000
+  })
+  // In a real application, this would open a preview modal
+}
+
+// Download file
+const downloadFile = (file) => {
+  toast.add({
+    severity: 'success',
+    summary: 'Download Started',
+    detail: `Downloading ${file.name}`,
+    life: 3000
+  })
+  // In a real application, this would trigger the file download
+}
+
+// Get answered questions count for questionnaire tasks
+const getAnsweredQuestionsCount = (task) => {
+  if (!task.questionnaire || task.questionnaire.length === 0) return 0
+  return task.questionnaire.filter(q => q.answer).length
+}
+
+// Get revoked systems count for offboarding system access tasks
+const getRevokedSystemsCount = (task) => {
+  if (!task.systemAccess || task.systemAccess.length === 0) return 0
+  return task.systemAccess.filter(system => system.revoked).length
 }
 
 const handleAssignWorkflow = () => {
@@ -2197,6 +2439,77 @@ const handleAssignWorkflow = () => {
   color: var(--color-gray-400);
 }
 
+/* Uploaded Document Section */
+.uploaded-document-section {
+  margin-bottom: 1rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.section-header .pi-file-pdf {
+  color: #dc2626;
+}
+
+.document-card {
+  background: linear-gradient(135deg, #fef2f2, #fff);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.document-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.document-icon {
+  width: 48px;
+  height: 48px;
+  background: #fee2e2;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.document-icon .pi {
+  font-size: 24px;
+  color: #dc2626;
+}
+
+.document-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.document-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-gray-900);
+}
+
+.document-meta {
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.document-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* Task Actions */
 .task-actions-section {
   display: flex;
@@ -2559,5 +2872,473 @@ const handleAssignWorkflow = () => {
 
 .offboarding-btn:focus {
   box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #fca5a5 !important;
+}
+
+/* Required Items Section */
+.required-items-section {
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.required-items-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.required-items-header i {
+  color: var(--color-primary-600);
+}
+
+.required-items-header span {
+  flex: 1;
+}
+
+.required-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Required Item Card - New Design */
+.required-item-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.required-item-card:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.required-item-card.item-completed {
+  border-color: var(--color-success-300);
+}
+
+.required-item-card.item-compulsory {
+  border-left: 3px solid var(--color-danger-500);
+}
+
+.required-item-card.item-compulsory.item-completed {
+  border-left-color: var(--color-success-500);
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-bg);
+}
+
+.item-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compulsory-tag {
+  font-size: 11px;
+}
+
+.item-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.required-item-card.item-completed .item-label {
+  color: var(--color-gray-500);
+}
+
+.item-check-icon {
+  color: var(--color-success-600);
+  font-size: 16px;
+}
+
+/* Uploaded File Section */
+.uploaded-file-section {
+  padding: 0.75rem;
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-sm);
+}
+
+.file-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-100);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-600);
+  font-size: 18px;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.file-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* No File Uploaded */
+.no-file-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--color-gray-400);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.no-file-section i {
+  font-size: 16px;
+}
+
+/* Questionnaire Section */
+.questionnaire-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.questionnaire-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.questionnaire-header i {
+  color: #6366f1;
+}
+
+.questionnaire-header span {
+  flex: 1;
+}
+
+.questionnaire-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.question-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.question-card:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.question-card.question-answered {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.question-card-header {
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.question-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.question-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  background: #6366f1;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.question-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  line-height: 1.4;
+}
+
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.type-tag {
+  font-size: 10px;
+}
+
+.required-tag {
+  font-size: 10px;
+}
+
+.question-answer-section {
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-top: 1px solid #bbf7d0;
+}
+
+.answer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.answer-header i {
+  color: var(--color-success-600);
+}
+
+.answer-content {
+  font-size: 13px;
+  color: var(--color-success-900);
+  line-height: 1.5;
+  background: var(--color-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #bbf7d0;
+}
+
+.question-no-answer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  color: var(--color-gray-400);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.question-no-answer i {
+  font-size: 14px;
+}
+
+/* System Access Section - Offboarding */
+.system-access-section {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.system-access-section.offboarding {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+}
+
+.system-access-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #dc2626;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fecaca;
+}
+
+.system-access-header i {
+  color: #dc2626;
+}
+
+.system-access-header span {
+  flex: 1;
+}
+
+.system-access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.system-access-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.system-access-card:hover {
+  border-color: #fca5a5;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+.system-access-card.system-revoked {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.system-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.system-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.system-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #dc2626;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.system-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.status-tag {
+  font-size: 11px;
+}
+
+.system-description {
+  padding: 0.625rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.system-details {
+  padding: 0.75rem;
+}
+
+.system-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.system-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.system-detail-item i {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.revocation-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-top: 1px solid #bbf7d0;
+  font-size: 12px;
+  color: var(--color-success-700);
+}
+
+.revocation-confirmed i {
+  color: var(--color-success-600);
+}
+
+.revocation-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border-top: 1px solid #fde047;
+  font-size: 12px;
+  color: #a16207;
+  font-style: italic;
+}
+
+.revocation-pending i {
+  color: #ca8a04;
 }
 </style>

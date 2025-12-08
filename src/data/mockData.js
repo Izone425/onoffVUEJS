@@ -439,6 +439,57 @@ export const taskTemplates = [
     createdAt: '2025-09-20',
     updatedAt: '2025-09-22',
     isActive: true
+  },
+  {
+    id: 17,
+    name: 'Exit Survey',
+    description: 'Complete exit survey to provide feedback on employment experience',
+    type: 'questionnaire',
+    indicator: 'offboarding',
+    ownerRole: 'Staff',
+    defaultAssignee: null,
+    sla: 3,
+    mandatory: true,
+    dependencies: [],
+    questions: [
+      {
+        id: 1,
+        text: 'What is your primary reason for leaving?',
+        type: 'single_choice',
+        options: ['Career advancement', 'Better compensation', 'Work-life balance', 'Relocation', 'Personal reasons', 'Other'],
+        required: true
+      },
+      {
+        id: 2,
+        text: 'How would you rate your overall experience working here?',
+        type: 'single_choice',
+        options: ['Excellent', 'Good', 'Average', 'Below Average', 'Poor'],
+        required: true
+      },
+      {
+        id: 3,
+        text: 'Which aspects of your job did you enjoy the most?',
+        type: 'multiple_choice',
+        options: ['Work environment', 'Team collaboration', 'Learning opportunities', 'Management support', 'Compensation & benefits', 'Work-life balance'],
+        required: false
+      },
+      {
+        id: 4,
+        text: 'Would you recommend this company as a good place to work?',
+        type: 'single_choice',
+        options: ['Definitely yes', 'Probably yes', 'Not sure', 'Probably not', 'Definitely not'],
+        required: true
+      },
+      {
+        id: 5,
+        text: 'What suggestions do you have for improving the workplace?',
+        type: 'text',
+        required: false
+      }
+    ],
+    createdAt: '2025-09-25',
+    updatedAt: '2025-09-25',
+    isActive: true
   }
 ]
 
