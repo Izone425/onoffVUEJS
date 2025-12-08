@@ -1189,11 +1189,12 @@
         <!-- Task Information Card -->
         <div class="task-info-card">
           <div class="info-grid">
-            <div class="info-item">
+            <!-- Hide Employee and Assigned To for Staff users viewing their own tasks -->
+            <div v-if="!isStaffUser" class="info-item">
               <span class="info-label">Employee</span>
               <span class="info-value">{{ selectedTaskForDetails.assignee }}</span>
             </div>
-            <div class="info-item">
+            <div v-if="!isStaffUser" class="info-item">
               <span class="info-label">Assigned To</span>
               <span class="info-value">{{ selectedTaskForDetails.assignedTo }}</span>
             </div>
@@ -1301,13 +1302,49 @@
         <div v-if="selectedTaskForDetails.filledInfo && selectedTaskForDetails.filledInfo.length > 0" class="filled-info-section">
           <div class="filled-info-header">
             <i class="pi pi-list"></i>
-            <span>Filled Information</span>
+            <span>{{ isStaffUser ? 'Fill In Your Information' : 'Filled Information' }}</span>
             <Tag
               :value="`${getFilledInfoCount(selectedTaskForDetails)}/${selectedTaskForDetails.filledInfo.length}`"
               :severity="getFilledInfoCount(selectedTaskForDetails) === selectedTaskForDetails.filledInfo.length ? 'success' : 'warning'"
             />
           </div>
-          <div class="filled-info-list">
+
+          <!-- Staff User: Editable Form -->
+          <div v-if="isStaffUser" class="staff-info-form">
+            <p class="form-instruction">Please fill in the required information below. Fields marked with * are compulsory.</p>
+            <div class="info-form-list">
+              <div
+                v-for="(info, index) in selectedTaskForDetails.filledInfo"
+                :key="index"
+                class="info-form-field"
+              >
+                <label class="info-form-label">
+                  {{ info.label }}
+                  <span v-if="info.required !== false" class="required-mark">*</span>
+                </label>
+                <InputText
+                  v-model="selectedTaskForDetails.filledInfo[index].value"
+                  :placeholder="`Enter ${info.label.toLowerCase()}`"
+                  class="w-full"
+                />
+              </div>
+            </div>
+            <div class="info-form-actions">
+              <Button
+                icon="pi pi-save"
+                label="Save Information"
+                @click="saveFilledInformation"
+                :disabled="!hasAllRequiredInfoFilled"
+              />
+              <p v-if="!hasAllRequiredInfoFilled" class="form-warning">
+                <i class="pi pi-info-circle"></i>
+                Please fill in all required fields before saving
+              </p>
+            </div>
+          </div>
+
+          <!-- Non-Staff User: Read-only View -->
+          <div v-else class="filled-info-list">
             <div
               v-for="(info, index) in selectedTaskForDetails.filledInfo"
               :key="index"
@@ -1630,13 +1667,97 @@
         <div v-if="selectedTaskForDetails.questionnaire && selectedTaskForDetails.questionnaire.length > 0" class="questionnaire-section">
           <div class="questionnaire-header">
             <i class="pi pi-question-circle"></i>
-            <span>Questionnaire</span>
+            <span>{{ isStaffUser ? 'Answer Questionnaire' : 'Questionnaire' }}</span>
             <Tag
               :value="`${getAnsweredQuestionsCount(selectedTaskForDetails)}/${selectedTaskForDetails.questionnaire.length}`"
               :severity="getAnsweredQuestionsCount(selectedTaskForDetails) === selectedTaskForDetails.questionnaire.length ? 'success' : 'warning'"
             />
           </div>
-          <div class="questionnaire-list">
+
+          <!-- Staff User: Editable Questionnaire Form -->
+          <div v-if="isStaffUser" class="staff-questionnaire-form">
+            <p class="form-instruction">Please answer all required questions below. Questions marked with * are compulsory.</p>
+            <div class="questionnaire-form-list">
+              <div
+                v-for="(question, index) in selectedTaskForDetails.questionnaire"
+                :key="index"
+                class="questionnaire-form-item"
+              >
+                <div class="question-form-header">
+                  <span class="question-number">Q{{ index + 1 }}</span>
+                  <span class="question-text">{{ question.question }}</span>
+                  <span v-if="question.required" class="required-mark">*</span>
+                </div>
+                <div class="question-type-badge">
+                  <Tag :value="question.type" severity="secondary" />
+                </div>
+
+                <!-- Text (Single Line) Input -->
+                <div v-if="question.type === 'Text' || question.type === 'Text (Single)'" class="question-input">
+                  <InputText
+                    v-model="selectedTaskForDetails.questionnaire[index].answer"
+                    :placeholder="`Enter your answer...`"
+                    class="w-full"
+                  />
+                </div>
+
+                <!-- Text (Multiple Lines) Input -->
+                <div v-else-if="question.type === 'Text (Multiple Lines)'" class="question-input">
+                  <Textarea
+                    v-model="selectedTaskForDetails.questionnaire[index].answer"
+                    :placeholder="`Enter your detailed answer...`"
+                    :rows="3"
+                    class="w-full"
+                  />
+                </div>
+
+                <!-- Picklist (Single) - Dropdown -->
+                <div v-else-if="question.type === 'Picklist (Single)'" class="question-input">
+                  <Dropdown
+                    v-model="selectedTaskForDetails.questionnaire[index].answer"
+                    :options="getPicklistOptions(question)"
+                    placeholder="Select an option"
+                    class="w-full"
+                  />
+                </div>
+
+                <!-- Picklist (Multiple) - Multi Select -->
+                <div v-else-if="question.type === 'Picklist (Multiple)'" class="question-input">
+                  <MultiSelect
+                    v-model="selectedTaskForDetails.questionnaire[index].answerArray"
+                    :options="getPicklistOptions(question)"
+                    placeholder="Select options"
+                    class="w-full"
+                    @change="updateMultipleAnswer(index)"
+                  />
+                </div>
+
+                <!-- Default Text Input for other types -->
+                <div v-else class="question-input">
+                  <InputText
+                    v-model="selectedTaskForDetails.questionnaire[index].answer"
+                    :placeholder="`Enter your answer...`"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="questionnaire-form-actions">
+              <Button
+                icon="pi pi-save"
+                label="Save Answers"
+                @click="saveQuestionnaireAnswers"
+                :disabled="!hasAllRequiredQuestionsAnswered"
+              />
+              <p v-if="!hasAllRequiredQuestionsAnswered" class="form-warning">
+                <i class="pi pi-info-circle"></i>
+                Please answer all required questions before saving
+              </p>
+            </div>
+          </div>
+
+          <!-- Non-Staff User: Read-only View -->
+          <div v-else class="questionnaire-list">
             <div
               v-for="(question, index) in selectedTaskForDetails.questionnaire"
               :key="index"
@@ -1963,6 +2084,8 @@ import Tag from 'primevue/tag'
 import ProgressBar from 'primevue/progressbar'
 import Sidebar from 'primevue/sidebar'
 import Dropdown from 'primevue/dropdown'
+import MultiSelect from 'primevue/multiselect'
+import Textarea from 'primevue/textarea'
 import Calendar from 'primevue/calendar'
 import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
@@ -2963,6 +3086,140 @@ const downloadFile = (file) => {
 const getFilledInfoCount = (task) => {
   if (!task.filledInfo || task.filledInfo.length === 0) return 0
   return task.filledInfo.filter(info => info.value).length
+}
+
+// Staff Information Form - Check if all required fields are filled
+const hasAllRequiredInfoFilled = computed(() => {
+  if (!selectedTaskForDetails.value?.filledInfo) return false
+  return selectedTaskForDetails.value.filledInfo
+    .filter(info => info.required !== false) // Get required fields (default is required)
+    .every(info => info.value && info.value.trim() !== '')
+})
+
+// Staff Information Form - Save filled information
+const saveFilledInformation = () => {
+  if (!selectedTaskForDetails.value?.filledInfo) return
+
+  // Check if all required fields are filled
+  const requiredFields = selectedTaskForDetails.value.filledInfo.filter(info => info.required !== false)
+  const allFilled = requiredFields.every(info => info.value && info.value.trim() !== '')
+
+  if (!allFilled) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Incomplete Information',
+      detail: 'Please fill in all required fields before saving',
+      life: 3000
+    })
+    return
+  }
+
+  // Update the task in allTasks array
+  const taskIndex = allTasks.value.findIndex(t => t.id === selectedTaskForDetails.value.id)
+  if (taskIndex !== -1) {
+    allTasks.value[taskIndex].filledInfo = [...selectedTaskForDetails.value.filledInfo]
+
+    // Check if all fields are now filled and update status
+    const allFieldsFilled = selectedTaskForDetails.value.filledInfo.every(info => info.value && info.value.trim() !== '')
+    if (allFieldsFilled && allTasks.value[taskIndex].status !== 'completed') {
+      allTasks.value[taskIndex].status = 'pending' // Ready for PIC review
+    }
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Information Saved',
+    detail: 'Your information has been saved successfully',
+    life: 3000
+  })
+}
+
+// Staff Questionnaire Form - Check if all required questions are answered
+const hasAllRequiredQuestionsAnswered = computed(() => {
+  if (!selectedTaskForDetails.value?.questionnaire) return false
+  return selectedTaskForDetails.value.questionnaire
+    .filter(q => q.required) // Get required questions
+    .every(q => q.answer && q.answer.trim() !== '')
+})
+
+// Get picklist options for questionnaire dropdowns
+const getPicklistOptions = (question) => {
+  // Common picklist options based on question content
+  const questionLower = question.question.toLowerCase()
+
+  // Rating questions
+  if (questionLower.includes('rate') || questionLower.includes('rating')) {
+    return ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor']
+  }
+
+  // Satisfaction questions
+  if (questionLower.includes('satisfied') || questionLower.includes('satisfaction')) {
+    return ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied', 'Very Dissatisfied']
+  }
+
+  // Yes/No questions
+  if (questionLower.includes('did you') || questionLower.includes('do you') || questionLower.includes('have you')) {
+    return ['Yes', 'No', 'Not Sure']
+  }
+
+  // Helpful aspects questions
+  if (questionLower.includes('helpful') || questionLower.includes('aspects')) {
+    return ['Welcome orientation', 'Team introduction', 'Equipment setup', 'Training sessions', 'Documentation', 'Manager support', 'IT support', 'HR support']
+  }
+
+  // Integration/team questions
+  if (questionLower.includes('integrate') || questionLower.includes('team')) {
+    return ['Excellent', 'Very Good', 'Good', 'Fair', 'Needs Improvement']
+  }
+
+  // Default options
+  return ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5']
+}
+
+// Update multiple answer from array to comma-separated string
+const updateMultipleAnswer = (index) => {
+  if (selectedTaskForDetails.value?.questionnaire[index]) {
+    const answerArray = selectedTaskForDetails.value.questionnaire[index].answerArray || []
+    selectedTaskForDetails.value.questionnaire[index].answer = answerArray.join(', ')
+  }
+}
+
+// Staff Questionnaire Form - Save questionnaire answers
+const saveQuestionnaireAnswers = () => {
+  if (!selectedTaskForDetails.value?.questionnaire) return
+
+  // Check if all required questions are answered
+  const requiredQuestions = selectedTaskForDetails.value.questionnaire.filter(q => q.required)
+  const allAnswered = requiredQuestions.every(q => q.answer && q.answer.trim() !== '')
+
+  if (!allAnswered) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Incomplete Questionnaire',
+      detail: 'Please answer all required questions before saving',
+      life: 3000
+    })
+    return
+  }
+
+  // Update the task in allTasks array
+  const taskIndex = allTasks.value.findIndex(t => t.id === selectedTaskForDetails.value.id)
+  if (taskIndex !== -1) {
+    allTasks.value[taskIndex].questionnaire = [...selectedTaskForDetails.value.questionnaire]
+
+    // Check if all questions are now answered and update status
+    const allQuestionsAnswered = selectedTaskForDetails.value.questionnaire.every(q => q.answer && q.answer.trim() !== '')
+    if (allQuestionsAnswered && allTasks.value[taskIndex].status !== 'completed') {
+      allTasks.value[taskIndex].status = 'pending' // Ready for PIC review
+    }
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Answers Saved',
+    detail: 'Your questionnaire answers have been saved successfully',
+    life: 3000
+  })
 }
 
 // System Access helper functions
@@ -4382,6 +4639,66 @@ const getAnsweredQuestionsCount = (task) => {
   font-style: italic;
 }
 
+/* Staff Information Form */
+.staff-info-form {
+  padding: 0.5rem;
+}
+
+.form-instruction {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-sm);
+}
+
+.info-form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.info-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.required-mark {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.info-form-actions {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: #f59e0b;
+  margin: 0;
+}
+
+.form-warning i {
+  font-size: 14px;
+}
+
 /* System Access Section */
 .system-access-section {
   background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
@@ -5033,6 +5350,70 @@ const getAnsweredQuestionsCount = (task) => {
 
 .question-no-answer i {
   font-size: 14px;
+}
+
+/* Staff Questionnaire Form */
+.staff-questionnaire-form {
+  padding: 0.5rem;
+}
+
+.questionnaire-form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.questionnaire-form-item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.question-form-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.question-form-header .question-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  background: #6366f1;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.question-form-header .question-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  line-height: 1.4;
+}
+
+.question-type-badge {
+  margin-bottom: 0.75rem;
+}
+
+.question-input {
+  margin-top: 0.5rem;
+}
+
+.questionnaire-form-actions {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Task Actions Section */
