@@ -36,7 +36,7 @@
           >
             <span :class="`pi ${item.icon}`" class="nav-icon"></span>
             <span class="nav-label" v-if="!collapsed">{{ item.label }}</span>
-            <span v-if="!collapsed && !userStore.canWrite(item.permission)" class="read-only-badge" title="Read Only">
+            <span v-if="!collapsed && !userStore.canWrite(item.permission) && !isStaffUser" class="read-only-badge" title="Read Only">
               <span class="pi pi-eye"></span>
             </span>
           </router-link>
@@ -57,7 +57,7 @@
           >
             <span :class="`pi ${item.icon}`" class="nav-icon"></span>
             <span class="nav-label" v-if="!collapsed">{{ item.label }}</span>
-            <span v-if="!collapsed && !userStore.canWrite(item.permission)" class="read-only-badge" title="Read Only">
+            <span v-if="!collapsed && !userStore.canWrite(item.permission) && !isStaffUser" class="read-only-badge" title="Read Only">
               <span class="pi pi-eye"></span>
             </span>
           </router-link>
@@ -108,6 +108,8 @@ defineEmits(['toggle'])
 
 const route = useRoute()
 const userStore = useUserStore()
+
+const isStaffUser = computed(() => userStore.currentRole?.name === 'Staff (End User)')
 
 const isActive = (path) => {
   return route.path === path || route.path.startsWith(path + '/')
