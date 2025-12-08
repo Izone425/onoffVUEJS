@@ -575,7 +575,13 @@
             @click="clearStageFilter"
           />
         </div>
-        <DataTable :value="filteredLeavers" stripedRows responsiveLayout="scroll" class="progress-table">
+        <DataTable
+          :value="filteredLeavers"
+          stripedRows
+          responsiveLayout="scroll"
+          class="progress-table clickable-rows"
+          @row-click="(e) => openEmployeeTasksDrawer(e.data)"
+        >
           <Column field="name" header="Employee" sortable style="width: 18%">
             <template #body="{ data }">
               <span class="font-medium">{{ data.name }}</span>
@@ -946,6 +952,102 @@
       </div>
     </Sidebar>
 
+    <!-- Employee Tasks Drawer -->
+    <Sidebar v-model:visible="isEmployeeTasksDrawerOpen" position="right" style="width: 700px;">
+      <template #header>
+        <span class="drawer-title">Tasks for {{ selectedEmployee?.name }}</span>
+      </template>
+      <div class="drawer-content" v-if="selectedEmployee">
+        <p class="drawer-subtitle">Viewing all assigned tasks across all offboarding stages</p>
+
+        <!-- Employee Info Card -->
+        <div class="employee-info-card">
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">Manager</span>
+              <span class="info-value">{{ selectedEmployee.manager }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Working Day</span>
+              <span class="info-value">{{ selectedEmployee.lastWorkingDay }}</span>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">Current Stage</span>
+              <Tag :value="selectedEmployee.currentStage" :severity="getStageSeverity(selectedEmployee.currentStage)" />
+            </div>
+            <div class="info-item">
+              <span class="info-label">Progress</span>
+              <div class="progress-cell">
+                <ProgressBar :value="employeeActualProgress" :showValue="false" style="height: 8px; width: 80px;" />
+                <span class="progress-percentage">{{ employeeActualProgress }}%</span>
+              </div>
+              <span class="tasks-count">{{ employeeCompletedTasks }} of {{ employeeTotalTasks }} tasks completed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tasks by Stage -->
+        <div v-for="stage in offboardingStages" :key="stage" class="stage-tasks-section">
+          <div class="stage-section-header">
+            <Tag :value="stage" :severity="getStageSeverity(stage)" />
+            <span class="stage-task-count">({{ getEmployeeTasksByStage(stage).length }} tasks)</span>
+          </div>
+          <div v-for="task in getEmployeeTasksByStage(stage)" :key="task.id" class="drawer-task-card">
+            <div class="task-card-main">
+              <i :class="getTaskStatusIcon(task.status)" :style="{ color: getTaskStatusColor(task.status) }"></i>
+              <div class="task-card-content">
+                <div class="task-card-title-row">
+                  <span class="task-card-title">{{ task.task }}</span>
+                  <StatusChip :status="normalizeStatus(task.status)" />
+                </div>
+                <div class="task-card-meta-row">
+                  <Tag :value="task.type" severity="secondary" />
+                  <span class="meta-item"><i class="pi pi-user"></i> {{ task.assignedTo }}</span>
+                  <span class="meta-item"><i class="pi pi-calendar"></i> {{ task.due }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="task-card-actions">
+              <Button
+                icon="pi pi-eye"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                title="View Details"
+                @click="openTaskDetailsDrawer(task); isEmployeeTasksDrawerOpen = false"
+              />
+              <Button
+                v-if="task.status !== 'completed'"
+                icon="pi pi-bell"
+                severity="info"
+                text
+                rounded
+                size="small"
+                title="Send Reminder"
+                @click="sendReminder(task)"
+              />
+              <Button
+                v-if="task.status !== 'completed'"
+                icon="pi pi-check-circle"
+                severity="success"
+                text
+                rounded
+                size="small"
+                title="Mark Complete"
+                @click="completeTask(task)"
+              />
+            </div>
+          </div>
+          <div v-if="getEmployeeTasksByStage(stage).length === 0" class="empty-stage">
+            No tasks in this stage
+          </div>
+        </div>
+      </div>
+    </Sidebar>
+
     <!-- Assign Workflow Drawer -->
     <Sidebar v-model:visible="isAssignDrawerOpen" position="right" style="width: 500px;">
       <template #header>
@@ -1047,6 +1149,7 @@ const progressStatusFilter = ref('all')
 const isTaskDetailsDrawerOpen = ref(false)
 const isAssignDrawerOpen = ref(false)
 const isAddTaskDrawerOpen = ref(false)
+const isEmployeeTasksDrawerOpen = ref(false)
 const selectedTaskForDetails = ref(null)
 
 // Popover ref
@@ -1349,6 +1452,25 @@ const isOverdue = (dueDate) => {
   return new Date(dueDate) < new Date()
 }
 
+// Computed properties for Employee Tasks Drawer
+const employeeTasks = computed(() => {
+  if (!selectedEmployee.value) return []
+  return filteredTasks.value.filter(task => task.assignee === selectedEmployee.value.name)
+})
+
+const employeeCompletedTasks = computed(() => {
+  return employeeTasks.value.filter(task => task.status === 'completed').length
+})
+
+const employeeTotalTasks = computed(() => {
+  return employeeTasks.value.length
+})
+
+const employeeActualProgress = computed(() => {
+  if (employeeTotalTasks.value === 0) return 0
+  return Math.round((employeeCompletedTasks.value / employeeTotalTasks.value) * 100)
+})
+
 const getEmployeeTasksByStage = (stage) => {
   if (!selectedEmployee.value) return []
   return filteredTasks.value.filter(task =>
@@ -1388,6 +1510,11 @@ const resetProgressFilters = () => {
 const viewEmployeeTasks = (employee) => {
   selectedEmployee.value = employee
   showEmployeeTasksPage.value = true
+}
+
+const openEmployeeTasksDrawer = (employee) => {
+  selectedEmployee.value = employee
+  isEmployeeTasksDrawerOpen.value = true
 }
 
 const openTaskDetailsDrawer = (task) => {
@@ -2261,5 +2388,160 @@ const handleAssignWorkflow = () => {
 
 .font-medium {
   font-weight: 500;
+}
+
+/* Clickable Rows */
+.clickable-rows :deep(.p-datatable-tbody > tr) {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clickable-rows :deep(.p-datatable-tbody > tr:hover) {
+  background-color: var(--color-gray-50) !important;
+}
+
+/* Employee Tasks Drawer Styles */
+.employee-info-card {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.employee-info-card .info-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.employee-info-card .info-row:last-child {
+  margin-bottom: 0;
+}
+
+.employee-info-card .info-item {
+  flex: 1;
+}
+
+.employee-info-card .info-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.employee-info-card .info-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+
+.employee-info-card .tasks-count {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  margin-top: 0.25rem;
+}
+
+/* Stage Tasks Section */
+.stage-tasks-section {
+  margin-bottom: 1.5rem;
+}
+
+.stage-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.stage-task-count {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+/* Drawer Task Card */
+.drawer-task-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.drawer-task-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.task-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.task-card-main > i {
+  font-size: 1rem;
+  margin-top: 0.125rem;
+}
+
+.task-card-content {
+  flex: 1;
+}
+
+.task-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.task-card-title {
+  font-weight: 500;
+  color: var(--color-gray-900);
+  font-size: 0.875rem;
+}
+
+.task-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.task-card-meta-row .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+.task-card-meta-row .meta-item i {
+  font-size: 0.75rem;
+}
+
+.task-card-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.empty-stage {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-gray-400);
+  font-size: 0.875rem;
+  font-style: italic;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
 }
 </style>
