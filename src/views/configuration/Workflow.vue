@@ -64,9 +64,12 @@
             </Column>
             <Column field="status" header="Status" style="min-width: 120px">
               <template #body="{ data }">
-                <span :class="['status-badge', data.status]">
-                  {{ data.status }}
-                </span>
+                <div class="status-toggle">
+                  <InputSwitch
+                    :modelValue="data.status === 'active'"
+                    @update:modelValue="toggleWorkflowStatus(data)"
+                  />
+                </div>
               </template>
             </Column>
             <Column field="updatedAt" header="Updated" style="min-width: 150px"></Column>
@@ -105,9 +108,12 @@
                   </div>
                   <div class="detail-row">
                     <span class="detail-label">Status:</span>
-                    <span :class="['status-badge', workflow.status]">
-                      {{ workflow.status }}
-                    </span>
+                    <div class="status-toggle" @click.stop>
+                      <InputSwitch
+                        :modelValue="workflow.status === 'active'"
+                        @update:modelValue="toggleWorkflowStatus(workflow)"
+                      />
+                    </div>
                   </div>
                   <div class="detail-row">
                     <span class="detail-label">Updated:</span>
@@ -157,6 +163,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import InputSwitch from 'primevue/inputswitch'
 import { workflows } from '../../data/mockData'
 
 const router = useRouter()
@@ -219,6 +226,19 @@ const deleteWorkflow = () => {
   })
 
   closeDeleteDialog()
+}
+
+// Toggle workflow status
+const toggleWorkflowStatus = (workflow) => {
+  // Toggle between 'active' and 'draft' (or 'inactive')
+  workflow.status = workflow.status === 'active' ? 'draft' : 'active'
+
+  toast.add({
+    severity: 'success',
+    summary: 'Status Updated',
+    detail: `"${workflow.name}" is now ${workflow.status === 'active' ? 'Active' : 'Inactive'}`,
+    life: 3000
+  })
 }
 </script>
 
@@ -508,5 +528,34 @@ const deleteWorkflow = () => {
 
 .w-full {
   width: 100%;
+}
+
+/* Status Toggle */
+.status-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.status-toggle :deep(.p-inputswitch) {
+  width: 2.5rem;
+  height: 1.25rem;
+}
+
+.status-toggle :deep(.p-inputswitch .p-inputswitch-slider) {
+  border-radius: 1rem;
+}
+
+.status-toggle :deep(.p-inputswitch .p-inputswitch-slider:before) {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: -0.4375rem;
+}
+
+.status-toggle :deep(.p-inputswitch.p-inputswitch-checked .p-inputswitch-slider) {
+  background-color: #22c55e;
+}
+
+.status-toggle :deep(.p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider) {
+  background-color: #16a34a;
 }
 </style>

@@ -125,9 +125,12 @@
             </Column>
             <Column field="isActive" header="Status" style="min-width: 110px">
               <template #body="{ data }">
-                <span :class="['status-badge', data.isActive !== false ? 'active' : 'inactive']">
-                  {{ data.isActive !== false ? 'Active' : 'Inactive' }}
-                </span>
+                <div class="status-toggle">
+                  <InputSwitch
+                    :modelValue="data.isActive !== false"
+                    @update:modelValue="toggleTemplateStatus(data)"
+                  />
+                </div>
               </template>
             </Column>
             <Column header="Actions" style="min-width: 140px" headerClass="actions-header">
@@ -199,9 +202,12 @@
                   </div>
                   <div class="detail-row">
                     <span class="detail-label">Status:</span>
-                    <span :class="['status-badge', template.isActive !== false ? 'active' : 'inactive']">
-                      {{ template.isActive !== false ? 'Active' : 'Inactive' }}
-                    </span>
+                    <div class="status-toggle" @click.stop>
+                      <InputSwitch
+                        :modelValue="template.isActive !== false"
+                        @update:modelValue="toggleTemplateStatus(template)"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div class="card-footer">
@@ -228,6 +234,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
+import InputSwitch from 'primevue/inputswitch'
 import StatusChip from '../../components/ui/StatusChip.vue'
 import TaskTemplateDrawer from '../../components/drawers/TaskTemplateDrawer.vue'
 import { taskTemplates, taskTypes } from '../../data/mockData'
@@ -382,6 +389,18 @@ const handleDelete = (template) => {
     summary: 'Delete Template',
     detail: `Are you sure you want to delete "${template.name}"?`,
     life: 5000
+  })
+}
+
+const toggleTemplateStatus = (template) => {
+  // Toggle the isActive status
+  template.isActive = template.isActive === false ? true : false
+
+  toast.add({
+    severity: 'success',
+    summary: 'Status Updated',
+    detail: `"${template.name}" is now ${template.isActive ? 'Active' : 'Inactive'}`,
+    life: 3000
   })
 }
 
@@ -892,5 +911,34 @@ const handleSaveTemplate = (templateData) => {
 
 .detail-value {
   color: var(--color-gray-900);
+}
+
+/* Status Toggle */
+.status-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.status-toggle :deep(.p-inputswitch) {
+  width: 2.5rem;
+  height: 1.25rem;
+}
+
+.status-toggle :deep(.p-inputswitch .p-inputswitch-slider) {
+  border-radius: 1rem;
+}
+
+.status-toggle :deep(.p-inputswitch .p-inputswitch-slider:before) {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: -0.4375rem;
+}
+
+.status-toggle :deep(.p-inputswitch.p-inputswitch-checked .p-inputswitch-slider) {
+  background-color: #22c55e;
+}
+
+.status-toggle :deep(.p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider) {
+  background-color: #16a34a;
 }
 </style>
