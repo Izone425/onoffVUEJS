@@ -818,16 +818,17 @@
                 </div>
                 <Tag :value="getMyTasksByStage(stage).length" severity="secondary" />
               </div>
-              <div class="stage-tasks">
+              <div class="stage-tasks-list">
                 <div
                   v-for="task in getMyTasksByStage(stage)"
                   :key="task.id"
-                  class="task-item"
+                  class="stage-task-item"
+                  :class="{ completed: task.status === 'completed' }"
                   @click="openTaskDetailsDrawer(task)"
                 >
                   <div class="task-item-header">
-                    <i :class="getTaskStatusIcon(task.status)" :style="{ color: getTaskStatusColor(task.status) }"></i>
-                    <span class="task-name">{{ task.task }}</span>
+                    <span class="task-item-title">{{ task.task }}</span>
+                    <StatusChip :status="normalizeStatus(task.status)" />
                   </div>
                   <div class="task-item-meta">
                     <Tag :value="task.type" severity="secondary" />
@@ -939,60 +940,293 @@
                   <i v-if="item.completed" class="pi pi-check-circle item-check-icon"></i>
                 </div>
               </div>
-              <!-- Uploaded File Section (visible for HR Admin) -->
-              <div v-if="item.uploadedFile && !isStaffUser" class="uploaded-file-section">
-                <div class="file-preview">
-                  <div class="file-icon-wrapper">
-                    <i :class="['pi', getFileIcon(item.uploadedFile.type)]"></i>
+
+              <!-- Staff User: File Upload Section -->
+              <div v-if="isStaffUser" class="staff-upload-section">
+                <!-- Already uploaded file - Staff can view and replace -->
+                <div v-if="item.uploadedFile" class="uploaded-file-preview">
+                  <div class="file-preview">
+                    <div class="file-icon-wrapper uploaded">
+                      <i :class="['pi', getFileIcon(item.uploadedFile.type)]"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ item.uploadedFile.name }}</span>
+                      <span class="file-meta">
+                        {{ item.uploadedFile.size }} • Uploaded {{ item.uploadedFile.uploadedAt }}
+                      </span>
+                    </div>
+                    <div class="file-actions">
+                      <Button
+                        icon="pi pi-eye"
+                        severity="secondary"
+                        text
+                        size="small"
+                        title="Preview"
+                        @click="previewFile(item.uploadedFile)"
+                      />
+                      <Button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        text
+                        size="small"
+                        title="Remove"
+                        @click="removeUploadedFile(item, index)"
+                      />
+                    </div>
                   </div>
-                  <div class="file-info">
-                    <span class="file-name">{{ item.uploadedFile.name }}</span>
-                    <span class="file-meta">
-                      {{ item.uploadedFile.size }} • Uploaded {{ item.uploadedFile.uploadedAt }}
-                    </span>
-                  </div>
-                  <div class="file-actions">
-                    <Button
-                      icon="pi pi-eye"
-                      severity="secondary"
-                      text
-                      size="small"
-                      title="Preview"
-                      @click="previewFile(item.uploadedFile)"
-                    />
-                    <Button
-                      icon="pi pi-download"
-                      severity="secondary"
-                      text
-                      size="small"
-                      title="Download"
-                      @click="downloadFile(item.uploadedFile)"
-                    />
+                  <div class="replace-file-hint">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Click below to replace this file</span>
                   </div>
                 </div>
+
+                <!-- File Upload Area for Staff -->
+                <div class="file-upload-area" :class="{ 'has-file': item.tempFile }">
+                  <input
+                    type="file"
+                    :id="`staff-upload-${index}`"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    @change="(e) => handleStaffFileUpload(e, item, index)"
+                    style="display: none"
+                  />
+                  <label :for="`staff-upload-${index}`" class="upload-label">
+                    <div v-if="!item.tempFile" class="upload-placeholder">
+                      <i class="pi pi-cloud-upload"></i>
+                      <span class="upload-text">{{ item.uploadedFile ? 'Click to replace file' : 'Click to upload file' }}</span>
+                      <span class="upload-hint">PDF, DOC, DOCX, JPG, PNG (Max 10MB)</span>
+                    </div>
+                    <div v-else class="upload-selected">
+                      <i class="pi pi-file"></i>
+                      <div class="selected-file-info">
+                        <span class="selected-file-name">{{ item.tempFile.name }}</span>
+                        <span class="selected-file-size">{{ formatFileSize(item.tempFile.size) }}</span>
+                      </div>
+                      <i class="pi pi-times remove-temp" @click.prevent="removeTempFile(item, index)"></i>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Upload Button -->
+                <div v-if="item.tempFile" class="upload-actions">
+                  <Button
+                    label="Upload Document"
+                    icon="pi pi-upload"
+                    severity="success"
+                    size="small"
+                    @click="confirmStaffUpload(item, index)"
+                  />
+                  <Button
+                    label="Cancel"
+                    icon="pi pi-times"
+                    severity="secondary"
+                    size="small"
+                    outlined
+                    @click="removeTempFile(item, index)"
+                  />
+                </div>
               </div>
-              <!-- No File Uploaded -->
-              <div v-else-if="!item.uploadedFile" class="no-file-section">
-                <i class="pi pi-inbox"></i>
-                <span>No file uploaded yet</span>
+
+              <!-- HR Admin/Other Roles: View Only Section -->
+              <div v-else>
+                <!-- Uploaded File Section (visible for HR Admin) -->
+                <div v-if="item.uploadedFile" class="uploaded-file-section">
+                  <div class="file-preview">
+                    <div class="file-icon-wrapper">
+                      <i :class="['pi', getFileIcon(item.uploadedFile.type)]"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ item.uploadedFile.name }}</span>
+                      <span class="file-meta">
+                        {{ item.uploadedFile.size }} • Uploaded {{ item.uploadedFile.uploadedAt }}
+                      </span>
+                    </div>
+                    <div class="file-actions">
+                      <Button
+                        icon="pi pi-eye"
+                        severity="secondary"
+                        text
+                        size="small"
+                        title="Preview"
+                        @click="previewFile(item.uploadedFile)"
+                      />
+                      <Button
+                        icon="pi pi-download"
+                        severity="secondary"
+                        text
+                        size="small"
+                        title="Download"
+                        @click="downloadFile(item.uploadedFile)"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <!-- No File Uploaded -->
+                <div v-else class="no-file-section">
+                  <i class="pi pi-inbox"></i>
+                  <span>No file uploaded yet</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Questionnaire Section (for Questionnaire type tasks) -->
-        <div v-if="selectedTaskForDetails.questionnaire && selectedTaskForDetails.questionnaire.length > 0" class="questionnaire-section">
+        <div v-if="selectedTaskForDetails.questionnaire && selectedTaskForDetails.questionnaire.length > 0" class="questionnaire-section" :class="{ 'staff-mode': isStaffUser }">
           <div class="questionnaire-header">
             <i class="pi pi-question-circle"></i>
-            <span>Questionnaire Responses</span>
+            <span>{{ isStaffUser ? 'Complete Questionnaire' : 'Questionnaire Responses' }}</span>
             <Tag
               :value="`${getAnsweredQuestionsCount(selectedTaskForDetails)}/${selectedTaskForDetails.questionnaire.length}`"
               :severity="getAnsweredQuestionsCount(selectedTaskForDetails) === selectedTaskForDetails.questionnaire.length ? 'success' : 'warning'"
             />
           </div>
 
-          <!-- Read-only View for HR Admin -->
-          <div class="questionnaire-list">
+          <!-- Staff User Editable Form -->
+          <div v-if="isStaffUser" class="staff-questionnaire-form">
+            <div class="staff-form-instructions">
+              <i class="pi pi-info-circle"></i>
+              <span>Please answer all required questions marked with <strong>*</strong> before submitting.</span>
+            </div>
+            <div class="questionnaire-list">
+              <div
+                v-for="(question, index) in selectedTaskForDetails.questionnaire"
+                :key="index"
+                class="question-card staff-editable"
+                :class="{ 'question-answered': question.answer, 'question-required': question.required && !question.answer }"
+              >
+                <div class="question-card-header">
+                  <div class="question-info">
+                    <span class="question-number">Q{{ index + 1 }}</span>
+                    <span class="question-text">
+                      {{ question.question }}
+                      <span v-if="question.required" class="required-asterisk">*</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="question-meta">
+                  <Tag :value="question.type" severity="secondary" class="type-tag" />
+                  <Tag
+                    :value="question.required ? 'Required' : 'Optional'"
+                    :severity="question.required ? 'info' : 'secondary'"
+                    class="required-tag"
+                  />
+                </div>
+
+                <!-- Staff Input Section -->
+                <div class="staff-input-section">
+                  <!-- Show input fields ONLY when: no answer exists OR editing mode is active -->
+                  <template v-if="!question.answer || question.isEditing">
+                    <!-- Picklist (Single) - Dropdown -->
+                    <div v-if="question.type === 'Picklist (Single)'" class="input-wrapper">
+                      <Dropdown
+                        v-model="question.tempAnswer"
+                        :options="question.options || getDefaultSingleOptions(question.question)"
+                        placeholder="Select an option..."
+                        class="staff-dropdown"
+                        :class="{ 'has-value': question.tempAnswer }"
+                        @change="handleQuestionAnswerChange(question, index)"
+                      />
+                    </div>
+
+                    <!-- Picklist (Multiple) - Checkbox Group -->
+                    <div v-else-if="question.type === 'Picklist (Multiple)'" class="input-wrapper checkbox-group">
+                      <div class="checkbox-options">
+                        <div
+                          v-for="(option, optIdx) in (question.options || getDefaultMultiOptions(question.question))"
+                          :key="optIdx"
+                          class="checkbox-option"
+                        >
+                          <Checkbox
+                            v-model="question.tempMultiAnswer"
+                            :inputId="`q${index}-opt${optIdx}`"
+                            :value="option"
+                            @change="handleMultiAnswerChange(question, index)"
+                          />
+                          <label :for="`q${index}-opt${optIdx}`">{{ option }}</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Text (Multiple Lines) - Textarea -->
+                    <div v-else-if="question.type === 'Text (Multiple Lines)'" class="input-wrapper">
+                      <Textarea
+                        v-model="question.tempAnswer"
+                        placeholder="Type your answer here..."
+                        rows="3"
+                        class="staff-textarea"
+                        :class="{ 'has-value': question.tempAnswer }"
+                        @input="handleQuestionAnswerChange(question, index)"
+                      />
+                    </div>
+
+                    <!-- Cancel Edit Button (when editing existing answer) -->
+                    <div v-if="question.isEditing" class="edit-actions">
+                      <Button
+                        icon="pi pi-times"
+                        label="Cancel"
+                        text
+                        severity="secondary"
+                        size="small"
+                        @click="cancelEditAnswer(question, index)"
+                      />
+                      <Button
+                        icon="pi pi-check"
+                        label="Save Changes"
+                        size="small"
+                        @click="saveEditedAnswer(question, index)"
+                      />
+                    </div>
+                  </template>
+
+                  <!-- Current Answer Display (if already answered AND not editing) -->
+                  <div v-if="question.answer && !question.isEditing" class="current-answer-display">
+                    <div class="current-answer-label">
+                      <i class="pi pi-check-circle"></i>
+                      <span>Your answer:</span>
+                    </div>
+                    <div class="current-answer-value">{{ question.answer }}</div>
+                    <Button
+                      icon="pi pi-pencil"
+                      label="Edit Answer"
+                      text
+                      size="small"
+                      class="edit-answer-btn"
+                      @click="enableEditAnswer(question, index)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Actions -->
+            <div class="staff-questionnaire-actions">
+              <div class="action-info">
+                <span class="answered-count">{{ getAnsweredQuestionsCount(selectedTaskForDetails) }} of {{ selectedTaskForDetails.questionnaire.length }} answered</span>
+                <span v-if="getRequiredUnansweredCount(selectedTaskForDetails) > 0" class="required-warning">
+                  <i class="pi pi-exclamation-triangle"></i>
+                  {{ getRequiredUnansweredCount(selectedTaskForDetails) }} required question(s) remaining
+                </span>
+              </div>
+              <div class="action-buttons">
+                <Button
+                  icon="pi pi-save"
+                  label="Save Draft"
+                  severity="secondary"
+                  outlined
+                  @click="saveQuestionnaireDraft(selectedTaskForDetails)"
+                />
+                <Button
+                  icon="pi pi-check"
+                  label="Submit Questionnaire"
+                  :disabled="getRequiredUnansweredCount(selectedTaskForDetails) > 0"
+                  @click="submitQuestionnaire(selectedTaskForDetails)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Read-only View for HR Admin / Other Users -->
+          <div v-else class="questionnaire-list">
             <div
               v-for="(question, index) in selectedTaskForDetails.questionnaire"
               :key="index"
@@ -1551,7 +1785,8 @@ const allLeavers = ref([
   { id: 1, name: 'Zulkifli Hassan', manager: 'Farah Kassim', lastWorkingDay: '2025-09-12', currentStage: 'Pre-Offboarding', completedTasks: 5, totalTasks: 9, progress: 56, status: 'in-progress', company: 'timetec-cloud' },
   { id: 2, name: 'Siti Rahmah', manager: 'Nizam Salleh', lastWorkingDay: '2025-09-20', currentStage: 'Pre-Offboarding', completedTasks: 2, totalTasks: 8, progress: 25, status: 'not-started', company: 'timetec-cloud' },
   { id: 3, name: 'Ahmad Razak', manager: 'Ahmed Fauzi', lastWorkingDay: '2025-10-01', currentStage: 'Last Day-Offboarding', completedTasks: 6, totalTasks: 10, progress: 60, status: 'in-progress', company: 'timetec-computing' },
-  { id: 4, name: 'Nurul Aina', manager: 'Farah Kassim', lastWorkingDay: '2025-10-15', currentStage: 'Post-Offboarding', completedTasks: 8, totalTasks: 8, progress: 100, status: 'completed', company: 'fingertech' }
+  { id: 4, name: 'Nurul Aina', manager: 'Farah Kassim', lastWorkingDay: '2025-10-15', currentStage: 'Post-Offboarding', completedTasks: 8, totalTasks: 8, progress: 100, status: 'completed', company: 'fingertech' },
+  { id: 5, name: 'Aina Zulkifli', manager: 'Ahmed Fauzi', lastWorkingDay: '2025-10-15', currentStage: 'Last Day-Offboarding', completedTasks: 6, totalTasks: 15, progress: 40, status: 'in-progress', company: 'timetec-cloud' }
 ])
 
 // Tasks data
@@ -1587,7 +1822,81 @@ const allTasks = ref([
   { id: 9, task: 'Clearance Form', assignee: 'Ahmad Razak', due: '2025-10-01', type: 'Information', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-computing', description: 'Complete the clearance form with all required signatures.' },
   { id: 10, task: 'Reference Letter Request', assignee: 'Nurul Aina', due: '2025-10-15', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Post-Offboarding', company: 'fingertech', description: 'Process reference letter request.' },
   { id: 11, task: 'Revoke Building Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke building access card and parking access.' },
-  { id: 12, task: 'Archive Employee Records', assignee: 'Nurul Aina', due: '2025-10-20', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Post-Offboarding', company: 'fingertech', description: 'Archive all employee records as per retention policy.' }
+  { id: 12, task: 'Archive Employee Records', assignee: 'Nurul Aina', due: '2025-10-20', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Post-Offboarding', company: 'fingertech', description: 'Archive all employee records as per retention policy.' },
+
+  // ============ AINA ZULKIFLI (STAFF) OFFBOARDING TASKS ============
+  // Pre-Offboarding Stage Tasks
+  { id: 100, task: 'Submit Resignation Letter', assignee: 'Aina Zulkifli', due: '2025-10-01', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Submit your official resignation letter to HR department.', requiredItems: [
+    { name: 'Resignation Letter', isCompulsory: true, completed: true, uploadedFile: { name: 'Resignation_Letter_Aina_Zulkifli.pdf', type: 'pdf', size: '189 KB', uploadedAt: '2025-09-28' } }
+  ] },
+  { id: 101, task: 'Complete Exit Survey', assignee: 'Aina Zulkifli', due: '2025-10-05', type: 'Questionnaire', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete the exit survey to provide feedback on your employment experience.', questionnaire: [
+    { question: 'What is your primary reason for leaving?', type: 'Picklist (Single)', required: true, answer: 'Better career opportunity', options: ['Better career opportunity', 'Higher salary/compensation', 'Relocation', 'Personal/family reasons', 'Health reasons', 'Further education', 'Work-life balance', 'Management issues', 'Company culture', 'Other'] },
+    { question: 'How would you rate your overall experience working here?', type: 'Picklist (Single)', required: true, answer: 'Excellent', options: ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'] },
+    { question: 'Which aspects of your job did you enjoy the most?', type: 'Picklist (Multiple)', required: false, answer: 'Work environment, Team collaboration, Management support', options: ['Work environment', 'Team collaboration', 'Management support', 'Learning opportunities', 'Career growth', 'Compensation & benefits', 'Work-life balance', 'Company culture', 'Job responsibilities'] },
+    { question: 'Would you recommend this company as a good place to work?', type: 'Picklist (Single)', required: true, answer: 'Definitely yes', options: ['Definitely yes', 'Probably yes', 'Not sure', 'Probably not', 'Definitely not'] },
+    { question: 'What suggestions do you have for improving the workplace?', type: 'Text (Multiple Lines)', required: false, answer: 'The company has been a great place to work. I would suggest more focus on employee wellness programs and flexible working arrangements.' }
+  ] },
+  { id: 102, task: 'Knowledge Transfer Documentation', assignee: 'Aina Zulkifli', due: '2025-10-08', type: 'Document', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Prepare and submit knowledge transfer documentation for your role and responsibilities.', requiredItems: [
+    { name: 'Project Handover Document', isCompulsory: true, completed: true, uploadedFile: { name: 'Project_Handover_AZ.docx', type: 'doc', size: '1.2 MB', uploadedAt: '2025-10-02' } },
+    { name: 'Process Documentation', isCompulsory: true, completed: false },
+    { name: 'Contact List & Stakeholders', isCompulsory: false, completed: true, uploadedFile: { name: 'Stakeholder_Contacts.xlsx', type: 'xlsx', size: '45 KB', uploadedAt: '2025-10-03' } }
+  ] },
+  { id: 103, task: 'Update Personal Information', assignee: 'Aina Zulkifli', due: '2025-10-03', type: 'Information', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Update your personal contact information for post-employment communication.', filledInfo: [
+    { label: 'Personal Email', value: 'aina.zulkifli@gmail.com', required: true },
+    { label: 'Personal Phone Number', value: '+60 12-345 6789', required: true },
+    { label: 'Forwarding Address', value: '123 Jalan Harmoni, Taman Bahagia, 47301 Petaling Jaya, Selangor', required: true },
+    { label: 'Emergency Contact', value: 'Ahmad Zulkifli (Father) - +60 13-987 6543', required: false }
+  ] },
+  { id: 104, task: 'Acknowledge Company Policy on Confidentiality', assignee: 'Aina Zulkifli', due: '2025-10-02', type: 'Document', indicator: 'Offboarding', status: 'completed', assignedTo: 'Staff', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Review and acknowledge the company confidentiality and non-disclosure agreement upon exit.', requiredItems: [
+    { name: 'Signed Confidentiality Acknowledgment', isCompulsory: true, completed: true, uploadedFile: { name: 'Confidentiality_Ack_Signed.pdf', type: 'pdf', size: '156 KB', uploadedAt: '2025-10-01' } }
+  ] },
+
+  // Last Day-Offboarding Stage Tasks
+  { id: 105, task: 'Return Company Assets', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Checklist', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Return all company-issued assets to IT department on your last working day.', checklistItems: [
+    { name: 'Laptop & Charger', completed: false, notes: 'MacBook Pro 14" with power adapter' },
+    { name: 'Mobile Phone', completed: false, notes: 'iPhone 13 with SIM card' },
+    { name: 'Access Card', completed: false, notes: 'Building and parking access card' },
+    { name: 'Office Keys', completed: false, notes: 'Cabinet and drawer keys' },
+    { name: 'Company Credit Card', completed: false, notes: 'Corporate card (if applicable)' }
+  ] },
+  { id: 106, task: 'Complete Clearance Form', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Information', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Complete the departmental clearance form with all required signatures.', filledInfo: [
+    { label: 'Department Head Clearance', value: '', required: true },
+    { label: 'IT Department Clearance', value: '', required: true },
+    { label: 'Finance Department Clearance', value: '', required: true },
+    { label: 'HR Department Clearance', value: '', required: true },
+    { label: 'Library/Resource Center Clearance', value: '', required: false }
+  ] },
+  { id: 107, task: 'Backup Personal Files', assignee: 'Aina Zulkifli', due: '2025-10-14', type: 'General', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Backup any personal files from company devices before returning them. Ensure no company confidential data is copied.' },
+  { id: 108, task: 'Final Timesheet Submission', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Document', indicator: 'Offboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Submit your final timesheet including all worked hours up to your last day.', requiredItems: [
+    { name: 'Final Timesheet', isCompulsory: true, completed: false }
+  ] },
+  { id: 109, task: 'Update Out-of-Office & Email Forwarding', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'General', indicator: 'Offboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Set up out-of-office reply and configure email forwarding to your replacement or manager.' },
+
+  // Post-Offboarding Stage Tasks
+  { id: 110, task: 'Collect Final Payslip', assignee: 'Aina Zulkifli', due: '2025-10-25', type: 'Document', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Collect your final payslip and payment confirmation from HR department.', requiredItems: [
+    { name: 'Final Payslip Acknowledgment', isCompulsory: true, completed: false }
+  ] },
+  { id: 111, task: 'Collect Employment Certificate', assignee: 'Aina Zulkifli', due: '2025-10-30', type: 'Document', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Collect your employment certificate and reference letter from HR department.' },
+  { id: 112, task: 'Exit Interview Feedback Review', assignee: 'Aina Zulkifli', due: '2025-10-20', type: 'Meeting/Event', indicator: 'Offboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Optional meeting to review and discuss your exit interview feedback with HR.' },
+  { id: 115, task: 'Offboarding Feedback Survey', assignee: 'Aina Zulkifli', due: '2025-10-18', type: 'Questionnaire', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Complete this feedback survey about your offboarding experience to help us improve our processes.', questionnaire: [
+    { question: 'How would you rate the overall offboarding process?', type: 'Picklist (Single)', required: true, answer: '', options: ['Excellent', 'Good', 'Average', 'Poor', 'Very Poor'] },
+    { question: 'Was the offboarding timeline communicated clearly?', type: 'Picklist (Single)', required: true, answer: '', options: ['Yes, very clear', 'Somewhat clear', 'Not very clear', 'Not communicated at all'] },
+    { question: 'Which departments handled your offboarding well?', type: 'Picklist (Multiple)', required: false, answer: '', options: ['HR Department', 'IT Department', 'Finance Department', 'Direct Manager', 'Admin Team'] },
+    { question: 'What challenges did you face during the offboarding process?', type: 'Text (Multiple Lines)', required: false, answer: '' },
+    { question: 'Would you recommend this company to others as a good place to work?', type: 'Picklist (Single)', required: true, answer: '', options: ['Definitely yes', 'Probably yes', 'Not sure', 'Probably not', 'Definitely not'] },
+    { question: 'Any additional suggestions to improve the offboarding experience?', type: 'Text (Multiple Lines)', required: false, answer: '' }
+  ] },
+  { id: 113, task: 'SOCSO & EPF Transfer Confirmation', assignee: 'Aina Zulkifli', due: '2025-11-15', type: 'Information', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Confirm the transfer of your SOCSO and EPF contributions to your new employer or personal account.', filledInfo: [
+    { label: 'New Employer Name (if applicable)', value: '', required: false },
+    { label: 'EPF Account Number', value: '', required: true },
+    { label: 'SOCSO Reference Number', value: '', required: true },
+    { label: 'Preferred Transfer Method', value: '', required: true }
+  ] },
+  { id: 114, task: 'Alumni Network Registration', assignee: 'Aina Zulkifli', due: '2025-11-01', type: 'Information', indicator: 'Offboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Optional registration for company alumni network to stay connected with former colleagues.', filledInfo: [
+    { label: 'Personal LinkedIn Profile', value: '', required: false },
+    { label: 'Preferred Contact Email', value: '', required: false },
+    { label: 'Consent to Alumni Communications', value: '', required: true }
+  ] }
 ])
 
 // Alerts data
@@ -1998,10 +2307,282 @@ const downloadFile = (file) => {
   // In a real application, this would trigger the file download
 }
 
+// Format file size for display
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// Staff Document Upload Functions
+const handleStaffFileUpload = (event, item, index) => {
+  const file = event.target.files[0]
+  if (file) {
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.add({
+        severity: 'error',
+        summary: 'File Too Large',
+        detail: 'Please select a file smaller than 10MB',
+        life: 3000
+      })
+      return
+    }
+
+    // Store temp file in the item
+    item.tempFile = file
+
+    toast.add({
+      severity: 'info',
+      summary: 'File Selected',
+      detail: `${file.name} ready to upload`,
+      life: 2000
+    })
+  }
+}
+
+const removeTempFile = (item, index) => {
+  item.tempFile = null
+  // Reset the file input
+  const input = document.getElementById(`staff-upload-${index}`)
+  if (input) input.value = ''
+}
+
+const removeUploadedFile = (item, index) => {
+  item.uploadedFile = null
+  item.completed = false
+
+  toast.add({
+    severity: 'info',
+    summary: 'File Removed',
+    detail: 'The uploaded file has been removed',
+    life: 3000
+  })
+}
+
+const confirmStaffUpload = (item, index) => {
+  if (!item.tempFile) return
+
+  // Simulate file upload
+  const file = item.tempFile
+  const fileExtension = file.name.split('.').pop().toLowerCase()
+
+  // Set uploaded file data
+  item.uploadedFile = {
+    name: file.name,
+    type: fileExtension,
+    size: formatFileSize(file.size),
+    uploadedAt: new Date().toISOString().split('T')[0]
+  }
+
+  // Mark as completed
+  item.completed = true
+
+  // Clear temp file
+  item.tempFile = null
+
+  // Reset the file input
+  const input = document.getElementById(`staff-upload-${index}`)
+  if (input) input.value = ''
+
+  toast.add({
+    severity: 'success',
+    summary: 'Upload Successful',
+    detail: `${file.name} has been uploaded successfully`,
+    life: 3000
+  })
+}
+
 // Get answered questions count for questionnaire tasks
 const getAnsweredQuestionsCount = (task) => {
   if (!task.questionnaire || task.questionnaire.length === 0) return 0
   return task.questionnaire.filter(q => q.answer).length
+}
+
+// Get count of required questions that are not yet answered
+const getRequiredUnansweredCount = (task) => {
+  if (!task.questionnaire || task.questionnaire.length === 0) return 0
+  return task.questionnaire.filter(q => q.required && !q.answer).length
+}
+
+// Get default options for single-choice questions based on question context
+const getDefaultSingleOptions = (questionText) => {
+  const lowerQuestion = questionText.toLowerCase()
+
+  // Rating questions
+  if (lowerQuestion.includes('rate') || lowerQuestion.includes('rating')) {
+    return ['Excellent', 'Very Good', 'Good', 'Average', 'Poor']
+  }
+  // Yes/No or recommendation questions
+  if (lowerQuestion.includes('recommend') || lowerQuestion.includes('would you')) {
+    return ['Definitely yes', 'Probably yes', 'Not sure', 'Probably not', 'Definitely not']
+  }
+  // Satisfaction questions
+  if (lowerQuestion.includes('satisfied') || lowerQuestion.includes('satisfaction')) {
+    return ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied', 'Very Dissatisfied']
+  }
+  // Agreement questions
+  if (lowerQuestion.includes('agree')) {
+    return ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree']
+  }
+  // Reason for leaving
+  if (lowerQuestion.includes('reason') && lowerQuestion.includes('leaving')) {
+    return ['Better career opportunity', 'Higher salary/compensation', 'Relocation', 'Personal/family reasons', 'Work-life balance', 'Management issues', 'Other']
+  }
+  // Communication clarity
+  if (lowerQuestion.includes('clear') || lowerQuestion.includes('communicated')) {
+    return ['Yes, very clear', 'Somewhat clear', 'Not very clear', 'Not communicated at all']
+  }
+  // Default fallback
+  return ['Excellent', 'Good', 'Average', 'Poor', 'Very Poor']
+}
+
+// Get default options for multiple-choice questions based on question context
+const getDefaultMultiOptions = (questionText) => {
+  const lowerQuestion = questionText.toLowerCase()
+
+  // Aspects/features enjoyed
+  if (lowerQuestion.includes('aspects') || lowerQuestion.includes('enjoy')) {
+    return ['Work environment', 'Team collaboration', 'Management support', 'Learning opportunities', 'Career growth', 'Compensation & benefits', 'Work-life balance', 'Company culture']
+  }
+  // Department handling
+  if (lowerQuestion.includes('department')) {
+    return ['HR Department', 'IT Department', 'Finance Department', 'Direct Manager', 'Admin Team', 'Facilities']
+  }
+  // Improvement areas
+  if (lowerQuestion.includes('improve') || lowerQuestion.includes('better')) {
+    return ['Communication', 'Training & Development', 'Work-life balance', 'Compensation', 'Management', 'Team collaboration', 'Tools & Resources']
+  }
+  // Default fallback
+  return ['Option A', 'Option B', 'Option C', 'Option D', 'Option E']
+}
+
+// Handle single/text answer change
+const handleQuestionAnswerChange = (question, index) => {
+  // tempAnswer is already updated via v-model, no additional action needed here
+  // This can be used for real-time validation or auto-save in the future
+}
+
+// Handle multiple choice answer change
+const handleMultiAnswerChange = (question, index) => {
+  // Initialize tempMultiAnswer if not exists
+  if (!question.tempMultiAnswer) {
+    question.tempMultiAnswer = []
+  }
+}
+
+// Enable editing of an already answered question
+const enableEditAnswer = (question, index) => {
+  question.isEditing = true
+  // Pre-populate tempAnswer with current answer
+  if (question.type === 'Picklist (Multiple)') {
+    question.tempMultiAnswer = question.answer ? question.answer.split(', ') : []
+  } else {
+    question.tempAnswer = question.answer || ''
+  }
+}
+
+// Cancel editing and revert to original answer
+const cancelEditAnswer = (question, index) => {
+  question.isEditing = false
+  question.tempAnswer = null
+  question.tempMultiAnswer = null
+}
+
+// Save edited answer
+const saveEditedAnswer = (question, index) => {
+  if (question.type === 'Picklist (Multiple)') {
+    if (question.tempMultiAnswer && question.tempMultiAnswer.length > 0) {
+      question.answer = question.tempMultiAnswer.join(', ')
+    }
+  } else {
+    if (question.tempAnswer) {
+      question.answer = question.tempAnswer
+    }
+  }
+  question.isEditing = false
+  question.tempAnswer = null
+  question.tempMultiAnswer = null
+
+  toast.add({
+    severity: 'success',
+    summary: 'Answer Updated',
+    detail: 'Your answer has been saved successfully.',
+    life: 2000
+  })
+}
+
+// Save questionnaire draft (save answers without completing the task)
+const saveQuestionnaireDraft = (task) => {
+  let savedCount = 0
+
+  task.questionnaire.forEach((question) => {
+    if (question.type === 'Picklist (Multiple)') {
+      if (question.tempMultiAnswer && question.tempMultiAnswer.length > 0) {
+        question.answer = question.tempMultiAnswer.join(', ')
+        savedCount++
+      }
+    } else {
+      if (question.tempAnswer) {
+        question.answer = question.tempAnswer
+        savedCount++
+      }
+    }
+    question.isEditing = false
+  })
+
+  toast.add({
+    severity: 'info',
+    summary: 'Draft Saved',
+    detail: `${savedCount} answer(s) saved as draft. You can continue later.`,
+    life: 3000
+  })
+}
+
+// Submit questionnaire (mark task as completed)
+const submitQuestionnaire = (task) => {
+  // First save all answers
+  task.questionnaire.forEach((question) => {
+    if (question.type === 'Picklist (Multiple)') {
+      if (question.tempMultiAnswer && question.tempMultiAnswer.length > 0) {
+        question.answer = question.tempMultiAnswer.join(', ')
+      }
+    } else {
+      if (question.tempAnswer) {
+        question.answer = question.tempAnswer
+      }
+    }
+    question.isEditing = false
+  })
+
+  // Check if all required questions are answered
+  const unansweredRequired = task.questionnaire.filter(q => q.required && !q.answer)
+  if (unansweredRequired.length > 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Incomplete Questionnaire',
+      detail: `Please answer all ${unansweredRequired.length} required question(s) before submitting.`,
+      life: 4000
+    })
+    return
+  }
+
+  // Mark task as completed
+  task.status = 'completed'
+
+  toast.add({
+    severity: 'success',
+    summary: 'Questionnaire Submitted',
+    detail: 'Thank you! Your questionnaire has been submitted successfully.',
+    life: 3000
+  })
+
+  // Close the drawer after a short delay
+  setTimeout(() => {
+    isTaskDetailsDrawerOpen.value = false
+  }, 1500)
 }
 
 // Get revoked systems count for offboarding system access tasks
@@ -2997,6 +3578,68 @@ const handleAssignWorkflow = () => {
   font-style: italic;
 }
 
+/* Stage Task Items (Staff View - matching Onboarding layout) */
+.stage-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.stage-task-item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.stage-task-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stage-task-item.completed {
+  border-left-color: #16a34a;
+}
+
+.stage-task-item .task-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.task-item-title {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-gray-900);
+  line-height: 1.3;
+}
+
+.stage-task-item .task-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.375rem;
+}
+
+.task-assignee, .task-due {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.stage-task-item .task-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
 .font-medium {
   font-weight: 500;
 }
@@ -3337,6 +3980,144 @@ const handleAssignWorkflow = () => {
   font-size: 16px;
 }
 
+/* Staff Upload Section */
+.staff-upload-section {
+  padding: 0.75rem;
+}
+
+.uploaded-file-preview {
+  margin-bottom: 0.75rem;
+}
+
+.uploaded-file-preview .file-preview {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+}
+
+.uploaded-file-preview .file-icon-wrapper.uploaded {
+  background: #bbf7d0;
+  color: var(--color-success-700);
+}
+
+.replace-file-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: #fef9c3;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: #a16207;
+}
+
+.replace-file-hint i {
+  font-size: 12px;
+}
+
+.file-upload-area {
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background: var(--color-gray-50);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.file-upload-area:hover {
+  border-color: var(--color-primary-400);
+  background: var(--color-primary-50);
+}
+
+.file-upload-area.has-file {
+  border-color: var(--color-success-400);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.upload-label {
+  display: block;
+  cursor: pointer;
+  padding: 1rem;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.upload-placeholder i {
+  font-size: 2rem;
+  color: var(--color-gray-400);
+}
+
+.file-upload-area:hover .upload-placeholder i {
+  color: var(--color-primary-500);
+}
+
+.upload-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.file-upload-area:hover .upload-text {
+  color: var(--color-primary-600);
+}
+
+.upload-hint {
+  font-size: 11px;
+  color: var(--color-gray-400);
+}
+
+.upload-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upload-selected > i.pi-file {
+  font-size: 1.5rem;
+  color: var(--color-success-600);
+}
+
+.selected-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.selected-file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.selected-file-size {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.remove-temp {
+  padding: 0.375rem;
+  color: var(--color-gray-400);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.remove-temp:hover {
+  color: var(--color-danger-600);
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 /* Questionnaire Section */
 .questionnaire-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -3481,6 +4262,212 @@ const handleAssignWorkflow = () => {
 
 .question-no-answer i {
   font-size: 14px;
+}
+
+/* Staff Questionnaire Form Styles */
+.questionnaire-section.staff-mode {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 1px solid #a5b4fc;
+}
+
+.questionnaire-section.staff-mode .questionnaire-header {
+  color: #4338ca;
+  border-bottom-color: #a5b4fc;
+}
+
+.staff-questionnaire-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.staff-form-instructions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #92400e;
+}
+
+.staff-form-instructions i {
+  color: #d97706;
+  font-size: 14px;
+}
+
+.question-card.staff-editable {
+  border: 1px solid #c7d2fe;
+  transition: all 0.2s ease;
+}
+
+.question-card.staff-editable:hover {
+  border-color: #818cf8;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.15);
+}
+
+.question-card.staff-editable.question-required {
+  border-left: 3px solid #f59e0b;
+}
+
+.question-card.staff-editable.question-answered {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.required-asterisk {
+  color: #dc2626;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.staff-input-section {
+  padding: 0.75rem;
+  background: var(--color-bg);
+}
+
+.input-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.staff-dropdown {
+  width: 100%;
+}
+
+.staff-dropdown :deep(.p-dropdown) {
+  width: 100%;
+}
+
+.staff-textarea {
+  width: 100%;
+}
+
+.staff-textarea :deep(.p-textarea) {
+  width: 100%;
+  resize: vertical;
+}
+
+.checkbox-group {
+  padding: 0.25rem 0;
+}
+
+.checkbox-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-option label {
+  font-size: 13px;
+  color: var(--color-gray-700);
+  cursor: pointer;
+}
+
+.checkbox-option:hover label {
+  color: var(--color-primary-600);
+}
+
+.current-answer-display {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+}
+
+.current-answer-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.current-answer-label i {
+  color: var(--color-success-600);
+  font-size: 12px;
+}
+
+.current-answer-value {
+  font-size: 13px;
+  color: var(--color-success-900);
+  padding: 0.5rem 0.625rem;
+  background: var(--color-bg);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.edit-answer-btn {
+  font-size: 11px;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-divider);
+}
+
+.edit-actions :deep(.p-button) {
+  font-size: 12px;
+}
+
+.staff-questionnaire-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radius-md);
+  margin-top: 0.5rem;
+}
+
+.action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.answered-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.required-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  color: #d97706;
+}
+
+.required-warning i {
+  font-size: 12px;
+}
+
+.staff-questionnaire-actions .action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.staff-questionnaire-actions .action-buttons :deep(.p-button) {
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 /* System Access Section - Offboarding */
