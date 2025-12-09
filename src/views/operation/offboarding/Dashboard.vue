@@ -1060,6 +1060,29 @@
               <div v-if="system.description" class="system-description">
                 {{ system.description }}
               </div>
+
+              <!-- Granted Credentials Section - Shows original access granted during onboarding -->
+              <div v-if="system.grantedUser" class="granted-credentials-section">
+                <div class="credentials-header">
+                  <i class="pi pi-key"></i>
+                  <span>Access Credentials (Granted)</span>
+                </div>
+                <div class="credentials-content">
+                  <div class="credential-item">
+                    <span class="credential-label">User/Email:</span>
+                    <span class="credential-value">{{ system.grantedUser }}</span>
+                  </div>
+                  <div v-if="system.grantedAt" class="credential-item">
+                    <span class="credential-label">Granted:</span>
+                    <span class="credential-value">{{ system.grantedAt }}</span>
+                  </div>
+                  <div v-if="system.grantedBy" class="credential-item">
+                    <span class="credential-label">Granted by:</span>
+                    <span class="credential-value">{{ system.grantedBy }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="system-details">
                 <div class="system-detail-item">
                   <i class="pi pi-user"></i>
@@ -1074,14 +1097,182 @@
                   <span>Revoked by: <strong>{{ system.revokedBy }}</strong></span>
                 </div>
               </div>
-              <!-- Revocation status indicator -->
-              <div v-if="system.revoked" class="revocation-confirmed">
+
+              <!-- IT/PIC Action Section - Only show for IT/PIC users when not revoked -->
+              <div v-if="isITPICUser && !system.revoked" class="itpic-action-section revoke-action">
+                <div class="action-section-header">
+                  <i class="pi pi-ban"></i>
+                  <span>Revoke System Access</span>
+                </div>
+                <div class="revoke-form">
+                  <div class="form-row">
+                    <div class="form-field">
+                      <label>Revocation Notes (Optional)</label>
+                      <Textarea
+                        v-model="system.tempRevocationNotes"
+                        placeholder="Add any notes about the revocation..."
+                        :rows="2"
+                        class="w-full"
+                      />
+                    </div>
+                  </div>
+                  <div class="action-buttons">
+                    <Button
+                      label="Confirm Revocation"
+                      icon="pi pi-lock"
+                      severity="danger"
+                      size="small"
+                      @click="confirmSystemRevocation(system, index)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- IT/PIC Undo Action - Show for IT/PIC users when already revoked -->
+              <div v-if="isITPICUser && system.revoked" class="itpic-undo-section">
+                <Button
+                  label="Undo Revocation"
+                  icon="pi pi-undo"
+                  severity="secondary"
+                  size="small"
+                  outlined
+                  @click="undoSystemRevocation(system, index)"
+                />
+              </div>
+
+              <!-- Revocation status indicator (only show for non-IT/PIC users) -->
+              <div v-if="!isITPICUser && system.revoked" class="revocation-confirmed">
                 <i class="pi pi-check-circle"></i>
                 <span>Access successfully revoked</span>
               </div>
-              <div v-else class="revocation-pending">
+              <div v-if="!isITPICUser && !system.revoked" class="revocation-pending">
                 <i class="pi pi-clock"></i>
                 <span>Awaiting revocation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Asset Collection Section (for Asset type tasks - Offboarding) -->
+        <div v-if="selectedTaskForDetails.assetCollection && selectedTaskForDetails.assetCollection.length > 0" class="asset-collection-section">
+          <div class="asset-collection-header">
+            <i class="pi pi-box"></i>
+            <span>Asset Collection</span>
+            <Tag
+              :value="`${getCollectedAssetsCount(selectedTaskForDetails)}/${selectedTaskForDetails.assetCollection.length}`"
+              :severity="getCollectedAssetsCount(selectedTaskForDetails) === selectedTaskForDetails.assetCollection.length ? 'success' : 'warning'"
+            />
+          </div>
+          <div class="asset-collection-list">
+            <div
+              v-for="(asset, index) in selectedTaskForDetails.assetCollection"
+              :key="index"
+              class="asset-collection-card"
+              :class="{ 'asset-collected': asset.collected, 'asset-compulsory': asset.isCompulsory }"
+            >
+              <div class="asset-card-header">
+                <div class="asset-info">
+                  <span class="asset-number">#{{ index + 1 }}</span>
+                  <span class="asset-name">{{ asset.name }}</span>
+                </div>
+                <div class="asset-badges">
+                  <Tag
+                    :value="asset.isCompulsory ? 'Compulsory' : 'Optional'"
+                    :severity="asset.isCompulsory ? 'danger' : 'secondary'"
+                    class="compulsory-tag"
+                  />
+                  <Tag
+                    :value="asset.collected ? 'Collected' : 'Pending'"
+                    :severity="asset.collected ? 'success' : 'warning'"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div v-if="asset.serialNumber" class="asset-serial">
+                <i class="pi pi-hashtag"></i>
+                <span>Serial: <strong>{{ asset.serialNumber }}</strong></span>
+              </div>
+              <div v-if="asset.description" class="asset-description">
+                {{ asset.description }}
+              </div>
+              <div class="asset-details">
+                <div v-if="asset.collectedAt" class="asset-detail-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>Collected: {{ asset.collectedAt }}</span>
+                </div>
+                <div v-if="asset.collectedBy" class="asset-detail-item">
+                  <i class="pi pi-user"></i>
+                  <span>Collected by: <strong>{{ asset.collectedBy }}</strong></span>
+                </div>
+                <div v-if="asset.condition" class="asset-detail-item">
+                  <i class="pi pi-info-circle"></i>
+                  <span>Condition: <strong>{{ asset.condition }}</strong></span>
+                </div>
+              </div>
+
+              <!-- IT/PIC Action Section - Only show for IT/PIC users when not collected -->
+              <div v-if="isITPICUser && !asset.collected" class="itpic-action-section collect-action">
+                <div class="action-section-header">
+                  <i class="pi pi-box"></i>
+                  <span>Collect Asset from Staff</span>
+                </div>
+                <div class="collect-form">
+                  <div class="form-row">
+                    <div class="form-field">
+                      <label>Asset Condition</label>
+                      <Dropdown
+                        v-model="asset.tempCondition"
+                        :options="assetConditionOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select condition"
+                        class="w-full"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-field">
+                      <label>Collection Notes (Optional)</label>
+                      <Textarea
+                        v-model="asset.tempCollectionNotes"
+                        placeholder="Add any notes about the asset condition or collection..."
+                        :rows="2"
+                        class="w-full"
+                      />
+                    </div>
+                  </div>
+                  <div class="action-buttons">
+                    <Button
+                      label="Confirm Collection"
+                      icon="pi pi-check"
+                      severity="success"
+                      size="small"
+                      @click="confirmAssetCollection(asset, index)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- IT/PIC Undo Action - Show for IT/PIC users when already collected -->
+              <div v-if="isITPICUser && asset.collected" class="itpic-undo-section">
+                <Button
+                  label="Undo Collection"
+                  icon="pi pi-undo"
+                  severity="secondary"
+                  size="small"
+                  outlined
+                  @click="undoAssetCollection(asset, index)"
+                />
+              </div>
+
+              <!-- Collection status indicator (only show for non-IT/PIC users) -->
+              <div v-if="!isITPICUser && asset.collected" class="collection-confirmed">
+                <i class="pi pi-check-circle"></i>
+                <span>Asset successfully collected</span>
+              </div>
+              <div v-if="!isITPICUser && !asset.collected" class="collection-pending">
+                <i class="pi pi-clock"></i>
+                <span>Awaiting collection from staff</span>
               </div>
             </div>
           </div>
@@ -1284,6 +1475,7 @@ import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
 import Calendar from 'primevue/calendar'
 import Checkbox from 'primevue/checkbox'
 import Popover from 'primevue/popover'
@@ -1366,13 +1558,20 @@ const allLeavers = ref([
 const allTasks = ref([
   { id: 1, task: 'Exit Interview', assignee: 'Zulkifli Hassan', due: '2025-09-10', type: 'Meeting/Event', indicator: 'Offboarding', status: 'completed', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Conduct exit interview to gather feedback and understand reasons for leaving.' },
   { id: 2, task: 'Revoke System Access', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'System/Access', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Revoke all system access including email, network, and applications.', systemAccess: [
-    { name: 'Corporate Email (Outlook)', description: 'Disable email account and remove from distribution lists', pic: 'IT Admin', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
-    { name: 'HRMS Portal', description: 'Revoke access to HR Management System', pic: 'HR Admin', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
-    { name: 'SharePoint & OneDrive', description: 'Remove cloud storage access and transfer files to manager', pic: 'IT Admin', revoked: true, revokedAt: '2025-09-12', revokedBy: 'David Kim' },
-    { name: 'VPN Access', description: 'Disable remote network access', pic: 'IT Admin', revoked: false },
-    { name: 'Jira & Confluence', description: 'Remove from project boards and revoke documentation access', pic: 'IT Admin', revoked: false }
+    { name: 'Corporate Email (Outlook)', description: 'Disable email account and remove from distribution lists', pic: 'IT Admin', grantedUser: 'zulkifli.hassan@timetec.com', grantedAt: '2022-03-15', grantedBy: 'David Kim', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
+    { name: 'HRMS Portal', description: 'Revoke access to HR Management System', pic: 'HR Admin', grantedUser: 'zulkifli.hassan', grantedAt: '2022-03-15', grantedBy: 'Sarah Lee', revoked: true, revokedAt: '2025-09-11', revokedBy: 'David Kim' },
+    { name: 'SharePoint & OneDrive', description: 'Remove cloud storage access and transfer files to manager', pic: 'IT Admin', grantedUser: 'zulkifli.hassan@timetec.com', grantedAt: '2022-03-16', grantedBy: 'David Kim', revoked: true, revokedAt: '2025-09-12', revokedBy: 'David Kim' },
+    { name: 'VPN Access', description: 'Disable remote network access', pic: 'IT Admin', grantedUser: 'zh-vpn-2022', grantedAt: '2022-03-20', grantedBy: 'David Kim', revoked: false },
+    { name: 'Jira & Confluence', description: 'Remove from project boards and revoke documentation access', pic: 'IT Admin', grantedUser: 'zulkifli.hassan@timetec.com', grantedAt: '2022-03-18', grantedBy: 'David Kim', revoked: false }
   ] },
-  { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.' },
+  { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.', assetCollection: [
+    { name: 'Laptop (MacBook Pro 14")', serialNumber: 'MBP-2023-ZH-001', description: 'Company issued laptop with charger and accessories', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good' },
+    { name: 'Mobile Phone (iPhone 14)', serialNumber: 'IPH-2023-ZH-002', description: 'Company mobile phone with SIM card', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good' },
+    { name: 'Access Card', serialNumber: 'ACC-ZH-1234', description: 'Building access card and parking card', isCompulsory: true, collected: false },
+    { name: 'Company Credit Card', serialNumber: 'CC-CORP-5678', description: 'Corporate credit card for business expenses', isCompulsory: true, collected: false },
+    { name: 'External Hard Drive', serialNumber: 'HDD-2022-ZH-003', description: '1TB external hard drive for backup', isCompulsory: false, collected: true, collectedAt: '2025-09-12', collectedBy: 'David Kim', condition: 'Fair' },
+    { name: 'Office Keys', serialNumber: 'KEY-ZH-456', description: 'Office cabinet and drawer keys', isCompulsory: false, collected: false }
+  ] },
   { id: 4, task: 'Final Pay Calculation', assignee: 'Siti Rahmah', due: '2025-09-18', type: 'General', indicator: 'Offboarding', status: 'pending', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Calculate final pay including prorated salary, unused leave, and any deductions.' },
   { id: 5, task: 'Knowledge Transfer', assignee: 'Zulkifli Hassan', due: '2025-09-08', type: 'Checklist', indicator: 'Offboarding', status: 'overdue', assignedTo: 'Manager', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete knowledge transfer documentation and handover to replacement.' },
   { id: 6, task: 'Benefits Termination', assignee: 'Ahmad Razak', due: '2025-10-01', type: 'General', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'HR Admin', stage: 'Last Day-Offboarding', company: 'timetec-computing', description: 'Process termination of all employee benefits.' },
@@ -1809,6 +2008,104 @@ const getAnsweredQuestionsCount = (task) => {
 const getRevokedSystemsCount = (task) => {
   if (!task.systemAccess || task.systemAccess.length === 0) return 0
   return task.systemAccess.filter(system => system.revoked).length
+}
+
+// Get collected assets count for offboarding asset collection tasks
+const getCollectedAssetsCount = (task) => {
+  if (!task.assetCollection || task.assetCollection.length === 0) return 0
+  return task.assetCollection.filter(asset => asset.collected).length
+}
+
+// Asset condition options for collection form
+const assetConditionOptions = ref([
+  { label: 'Excellent', value: 'Excellent' },
+  { label: 'Good', value: 'Good' },
+  { label: 'Fair', value: 'Fair' },
+  { label: 'Poor', value: 'Poor' },
+  { label: 'Damaged', value: 'Damaged' }
+])
+
+// IT/PIC Action Functions - System Access Revocation (Offboarding)
+const confirmSystemRevocation = (system, index) => {
+  // Get current user name from store
+  const currentUserName = userStore.currentRole?.name === 'IT/PIC' ? 'David Kim' : 'IT Admin'
+
+  // Update the system access
+  system.revoked = true
+  system.revokedAt = new Date().toISOString().split('T')[0]
+  system.revokedBy = currentUserName
+  if (system.tempRevocationNotes) {
+    system.revocationNotes = system.tempRevocationNotes
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Access Revoked',
+    detail: `Access to ${system.name} has been successfully revoked`,
+    life: 3000
+  })
+}
+
+const undoSystemRevocation = (system, index) => {
+  system.revoked = false
+  system.revokedAt = null
+  system.revokedBy = null
+  system.revocationNotes = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Revocation Undone',
+    detail: `Revocation of ${system.name} has been undone`,
+    life: 3000
+  })
+}
+
+// IT/PIC Action Functions - Asset Collection (Offboarding)
+const confirmAssetCollection = (asset, index) => {
+  // Get current user name from store
+  const currentUserName = userStore.currentRole?.name === 'IT/PIC' ? 'David Kim' : 'IT Admin'
+
+  // Validate condition selection
+  if (!asset.tempCondition) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing Information',
+      detail: 'Please select the asset condition before confirming collection',
+      life: 3000
+    })
+    return
+  }
+
+  // Update the asset
+  asset.collected = true
+  asset.collectedAt = new Date().toISOString().split('T')[0]
+  asset.collectedBy = currentUserName
+  asset.condition = asset.tempCondition
+  if (asset.tempCollectionNotes) {
+    asset.collectionNotes = asset.tempCollectionNotes
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Asset Collected',
+    detail: `${asset.name} has been successfully collected`,
+    life: 3000
+  })
+}
+
+const undoAssetCollection = (asset, index) => {
+  asset.collected = false
+  asset.collectedAt = null
+  asset.collectedBy = null
+  asset.condition = null
+  asset.collectionNotes = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Collection Undone',
+    detail: `Collection of ${asset.name} has been undone`,
+    life: 3000
+  })
 }
 
 const handleAssignWorkflow = () => {
@@ -3340,5 +3637,328 @@ const handleAssignWorkflow = () => {
 
 .revocation-pending i {
   color: #ca8a04;
+}
+
+/* Asset Collection Section - Offboarding */
+.asset-collection-section {
+  background: linear-gradient(135deg, #fef7ed 0%, #fed7aa 100%);
+  border: 1px solid #fdba74;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.asset-collection-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #c2410c;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fdba74;
+}
+
+.asset-collection-header i {
+  color: #c2410c;
+}
+
+.asset-collection-header span {
+  flex: 1;
+}
+
+.asset-collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.asset-collection-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.asset-collection-card:hover {
+  border-color: #fb923c;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.1);
+}
+
+.asset-collection-card.asset-collected {
+  border-left: 3px solid var(--color-success-500);
+}
+
+.asset-collection-card.asset-compulsory:not(.asset-collected) {
+  border-left: 3px solid #dc2626;
+}
+
+.asset-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.asset-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.asset-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #c2410c;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.asset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.asset-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.asset-serial {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.asset-serial i {
+  color: #c2410c;
+  font-size: 11px;
+}
+
+.asset-description {
+  padding: 0.625rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.asset-details {
+  padding: 0.75rem;
+}
+
+.asset-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.asset-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.asset-detail-item i {
+  color: #c2410c;
+  font-size: 12px;
+}
+
+.collection-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-top: 1px solid #bbf7d0;
+  font-size: 12px;
+  color: var(--color-success-700);
+}
+
+.collection-confirmed i {
+  color: var(--color-success-600);
+}
+
+.collection-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border-top: 1px solid #fde047;
+  font-size: 12px;
+  color: #a16207;
+  font-style: italic;
+}
+
+.collection-pending i {
+  color: #ca8a04;
+}
+
+/* IT/PIC Action Section Styles */
+.itpic-action-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-divider);
+}
+
+.itpic-action-section.revoke-action {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  border-color: #fca5a5;
+}
+
+.itpic-action-section.collect-action {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.action-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.revoke-action .action-section-header {
+  color: #dc2626;
+  border-bottom-color: #fca5a5;
+}
+
+.revoke-action .action-section-header i {
+  color: #dc2626;
+}
+
+.collect-action .action-section-header {
+  color: var(--color-success-700);
+  border-bottom-color: #86efac;
+}
+
+.collect-action .action-section-header i {
+  color: var(--color-success-600);
+}
+
+.revoke-form,
+.collect-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.action-buttons :deep(.p-button) {
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.itpic-undo-section {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Granted Credentials Section - Offboarding */
+.granted-credentials-section {
+  margin: 0.5rem 0.75rem;
+  padding: 0.625rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-md);
+}
+
+.granted-credentials-section .credentials-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 11px;
+  color: #1d4ed8;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.granted-credentials-section .credentials-header i {
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+.granted-credentials-section .credentials-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.granted-credentials-section .credential-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+}
+
+.granted-credentials-section .credential-label {
+  color: var(--color-gray-500);
+  min-width: 80px;
+}
+
+.granted-credentials-section .credential-value {
+  color: var(--color-gray-800);
+  font-weight: 500;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
 }
 </style>
