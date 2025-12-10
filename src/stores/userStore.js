@@ -263,7 +263,51 @@ export const useUserStore = defineStore('user', () => {
     const roleIndex = roles.value.findIndex(r => r.id === roleId)
     if (roleIndex !== -1) {
       roles.value[roleIndex].permissions = permissions
+      roles.value[roleIndex].lastUpdated = new Date().toISOString().split('T')[0]
     }
+  }
+
+  // Add a new role
+  const addRole = (roleData) => {
+    const newRole = {
+      ...roleData,
+      id: roleData.id || `role-${Date.now()}`,
+      userCount: roleData.userCount || 0,
+      lastUpdated: new Date().toISOString().split('T')[0]
+    }
+    roles.value.push(newRole)
+  }
+
+  // Update an existing role
+  const updateRole = (roleData) => {
+    const roleIndex = roles.value.findIndex(r => r.id === roleData.id)
+    if (roleIndex !== -1) {
+      roles.value[roleIndex] = {
+        ...roles.value[roleIndex],
+        ...roleData,
+        lastUpdated: new Date().toISOString().split('T')[0]
+      }
+    }
+  }
+
+  // Delete a role
+  const deleteRole = (roleId) => {
+    const roleIndex = roles.value.findIndex(r => r.id === roleId)
+    if (roleIndex !== -1) {
+      roles.value.splice(roleIndex, 1)
+    }
+  }
+
+  // Get role by ID
+  const getRoleById = (roleId) => {
+    return roles.value.find(r => r.id === roleId)
+  }
+
+  // Check if role name exists
+  const roleNameExists = (name, excludeId = null) => {
+    return roles.value.some(r =>
+      r.name.toLowerCase() === name.toLowerCase() && r.id !== excludeId
+    )
   }
 
   return {
@@ -285,6 +329,11 @@ export const useUserStore = defineStore('user', () => {
     canRead,
     canWrite,
     switchRole,
-    updateRolePermissions
+    updateRolePermissions,
+    addRole,
+    updateRole,
+    deleteRole,
+    getRoleById,
+    roleNameExists
   }
 })
