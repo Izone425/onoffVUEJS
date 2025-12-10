@@ -65,34 +65,12 @@
               />
             </div>
 
-            <div class="field-group">
-              <label class="field-label">Person In Charge (PIC) {{ viewMode ? '' : '*' }}</label>
-              <Dropdown
-                v-model="asset.pic"
-                :options="picOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select PIC responsible for this asset"
-                class="w-full"
-                :disabled="viewMode"
-              >
-                <template #optiongroup="slotProps">
-                  <div class="option-group-label">{{ slotProps.option.label }}</div>
-                </template>
-              </Dropdown>
-            </div>
-
             <div class="handover-toggle">
               <div class="toggle-content">
                 <label class="toggle-label">Upload Hand-over Letter</label>
                 <p class="toggle-description">{{ viewMode ? (asset.handoverLetter ? 'Hand-over letter is required' : 'No hand-over letter required') : 'Enable if this asset requires a hand-over letter to be uploaded' }}</p>
               </div>
               <InputSwitch v-model="asset.handoverLetter" :disabled="viewMode" />
-            </div>
-
-            <div class="pic-info">
-              <span class="pi pi-box"></span>
-              <span>Assigned to: <strong>{{ asset.pic }}</strong></span>
             </div>
           </div>
         </div>
@@ -119,7 +97,6 @@ import { computed } from 'vue'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import Dropdown from 'primevue/dropdown'
 import InputSwitch from 'primevue/inputswitch'
 
 const props = defineProps({
@@ -140,41 +117,11 @@ const localAssetItems = computed({
   set: (val) => emit('update:assetItems', val)
 })
 
-const picOptions = [
-  {
-    label: 'Department',
-    items: [
-      { label: 'Human Resources', value: 'dept-hr' },
-      { label: 'Information Technology', value: 'dept-it' },
-      { label: 'Finance & Accounting', value: 'dept-finance' },
-      { label: 'Operations', value: 'dept-operations' }
-    ]
-  },
-  {
-    label: 'Designation',
-    items: [
-      { label: 'Manager', value: 'desig-manager' },
-      { label: 'Supervisor', value: 'desig-supervisor' },
-      { label: 'Coordinator', value: 'desig-coordinator' },
-      { label: 'Admin', value: 'desig-admin' }
-    ]
-  },
-  {
-    label: 'Employee',
-    items: [
-      { label: 'Sarah Ahmad (HR Admin)', value: 'emp-sarah-ahmad' },
-      { label: 'David Kim (IT Admin)', value: 'emp-david-kim' },
-      { label: 'Emily Rodriguez (Manager)', value: 'emp-emily-rodriguez' }
-    ]
-  }
-]
-
 const handleAddAsset = () => {
   const newAsset = {
     id: `asset-${Date.now()}`,
     name: '',
     description: '',
-    pic: '',
     handoverLetter: false
   }
   localAssetItems.value.push(newAsset)
@@ -317,14 +264,6 @@ const handleRemoveAsset = (assetId) => {
   margin-top: 2px;
 }
 
-.pic-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  font-size: 13px;
-  color: var(--color-gray-600);
-}
-
 .empty-state {
   text-align: center;
   padding: var(--spacing-6) var(--spacing-3);
@@ -364,15 +303,6 @@ const handleRemoveAsset = (assetId) => {
   border-radius: var(--radius-md);
   font-size: 12px;
   color: var(--color-gray-700);
-}
-
-.option-group-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-gray-600);
-  padding: var(--spacing-1) 0;
-  border-bottom: 1px solid var(--color-divider);
-  margin-bottom: var(--spacing-1);
 }
 
 .w-full {

@@ -12,7 +12,9 @@
       "Bash(git remote set-url:*)",
       "Bash(dir \"C:\\Users\\Muhammad Izzuwan\\Documents\\TIMETEC HRV2\\Onboarding offboarding claude\" /B)",
       "Bash(tasklist:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(cd:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

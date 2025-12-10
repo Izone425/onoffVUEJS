@@ -7,7 +7,7 @@
         </div>
         <div class="header-text">
           <label class="form-label">Checklist Items</label>
-          <p class="header-description">Add checklist items that need to be completed and assign a Person in Charge (PIC) for each item</p>
+          <p class="header-description">Add checklist items that need to be completed for this task</p>
         </div>
       </div>
       <Button
@@ -55,19 +55,6 @@
               class="w-full"
             />
           </div>
-
-          <div class="field-group">
-            <label for="checklistPIC" class="form-label">Person In Charge (PIC) <span class="required">*</span></label>
-            <Dropdown
-              id="checklistPIC"
-              v-model="newChecklistItem.pic"
-              :options="picOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Select PIC responsible for this checklist item"
-              class="w-full"
-            />
-          </div>
         </div>
 
         <div class="form-actions">
@@ -83,7 +70,7 @@
             icon="pi pi-save"
             size="small"
             @click="handleAddChecklistItem"
-            :disabled="!newChecklistItem.title.trim() || !newChecklistItem.description.trim() || !newChecklistItem.pic"
+            :disabled="!newChecklistItem.title.trim() || !newChecklistItem.description.trim()"
           />
         </div>
       </div>
@@ -122,24 +109,6 @@
                     :disabled="viewMode"
                   />
                 </div>
-
-                <div class="field-group">
-                  <Dropdown
-                    v-model="item.pic"
-                    @change="handleChecklistItemChange(item.id, 'pic', item.pic)"
-                    :options="picOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select PIC"
-                    class="w-full"
-                    :disabled="viewMode"
-                  />
-                </div>
-
-                <div class="assigned-info">
-                  <span class="pi pi-user"></span>
-                  <span>Assigned to: <strong>{{ item.pic }}</strong></span>
-                </div>
               </div>
 
               <Button
@@ -154,10 +123,6 @@
               />
             </div>
           </div>
-        </div>
-
-        <div class="info-note">
-          <p><strong>Example:</strong> For "Employee Exit Process" checklist, you might add: "Complete security clearance" → "Return company property" → "Submit final documentation", each with specific requirements and assigned PICs.</p>
         </div>
       </div>
 
@@ -178,7 +143,6 @@ import { ref, computed } from 'vue'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import Dropdown from 'primevue/dropdown'
 
 const props = defineProps({
   checklistItems: {
@@ -196,8 +160,7 @@ const emit = defineEmits(['update:checklistItems'])
 const isAddingChecklistItem = ref(false)
 const newChecklistItem = ref({
   title: '',
-  description: '',
-  pic: ''
+  description: ''
 })
 
 const checklistItems = computed({
@@ -205,24 +168,12 @@ const checklistItems = computed({
   set: (val) => emit('update:checklistItems', val)
 })
 
-const picOptions = [
-  { label: 'HR Admin', value: 'HR Admin' },
-  { label: 'IT Department', value: 'IT Department' },
-  { label: 'Finance Department', value: 'Finance Department' },
-  { label: 'Department Manager', value: 'Department Manager' },
-  { label: 'Direct Supervisor', value: 'Direct Supervisor' },
-  { label: 'Security Team', value: 'Security Team' },
-  { label: 'Facilities Manager', value: 'Facilities Manager' },
-  { label: 'Payroll Administrator', value: 'Payroll Administrator' }
-]
-
 const handleAddChecklistItem = () => {
-  if (newChecklistItem.value.title.trim() && newChecklistItem.value.description.trim() && newChecklistItem.value.pic) {
+  if (newChecklistItem.value.title.trim() && newChecklistItem.value.description.trim()) {
     const newItem = {
       id: `checklist-${Date.now()}`,
       title: newChecklistItem.value.title,
-      description: newChecklistItem.value.description,
-      pic: newChecklistItem.value.pic
+      description: newChecklistItem.value.description
     }
     checklistItems.value.push(newItem)
     cancelAddItem()
@@ -233,8 +184,7 @@ const cancelAddItem = () => {
   isAddingChecklistItem.value = false
   newChecklistItem.value = {
     title: '',
-    description: '',
-    pic: ''
+    description: ''
   }
 }
 
@@ -412,37 +362,8 @@ const handleRemoveChecklistItem = (itemId) => {
   font-weight: 500;
 }
 
-.assigned-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: 13px;
-  color: var(--color-gray-600);
-}
-
-.assigned-info .pi {
-  font-size: 12px;
-}
-
-.assigned-info strong {
-  color: var(--color-gray-900);
-}
-
 .remove-btn {
   margin-top: 4px;
-}
-
-.info-note {
-  padding: var(--spacing-2);
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  color: var(--color-gray-700);
-}
-
-.info-note p {
-  margin: 0;
 }
 
 .empty-state {

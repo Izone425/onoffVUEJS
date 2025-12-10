@@ -64,24 +64,6 @@
                 :disabled="viewMode"
               />
             </div>
-
-            <div class="field-group">
-              <label class="field-label">Person In Charge (PIC) {{ viewMode ? '' : '*' }}</label>
-              <Dropdown
-                v-model="system.pic"
-                :options="picOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select PIC responsible for this system"
-                class="w-full"
-                :disabled="viewMode"
-              />
-            </div>
-
-            <div class="pic-info">
-              <span class="pi pi-cog"></span>
-              <span>Assigned to: <strong>{{ system.pic }}</strong></span>
-            </div>
           </div>
         </div>
       </div>
@@ -95,9 +77,6 @@
         <p class="empty-text">Click "Add System/Application" to get started</p>
       </div>
 
-      <div v-if="localSystemAccesses.length > 0" class="info-box">
-        <p><strong>Example:</strong> For "Onboarding for HR implementer" task, you might add: Company Email → HRMS → Zoho CRM, each with specific setup requirements and assigned PICs.</p>
-      </div>
     </div>
   </div>
 </template>
@@ -107,7 +86,6 @@ import { computed } from 'vue'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import Dropdown from 'primevue/dropdown'
 
 const props = defineProps({
   systemAccesses: {
@@ -127,23 +105,11 @@ const localSystemAccesses = computed({
   set: (val) => emit('update:systemAccesses', val)
 })
 
-const picOptions = [
-  { label: 'Human Resources', value: 'dept-hr' },
-  { label: 'Information Technology', value: 'dept-it' },
-  { label: 'Finance & Accounting', value: 'dept-finance' },
-  { label: 'Operations', value: 'dept-operations' },
-  { label: 'Manager', value: 'desig-manager' },
-  { label: 'Supervisor', value: 'desig-supervisor' },
-  { label: 'IT Admin', value: 'emp-it-admin' },
-  { label: 'HR Admin', value: 'emp-hr-admin' }
-]
-
 const handleAddSystem = () => {
   const newSystem = {
     id: `system-${Date.now()}`,
     name: '',
-    description: '',
-    pic: ''
+    description: ''
   }
   localSystemAccesses.value.push(newSystem)
 }
@@ -260,14 +226,6 @@ const handleRemoveSystem = (systemId) => {
   color: var(--color-gray-900);
 }
 
-.pic-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  font-size: 13px;
-  color: var(--color-gray-600);
-}
-
 .empty-state {
   text-align: center;
   padding: var(--spacing-6) var(--spacing-3);
@@ -297,16 +255,6 @@ const handleRemoveSystem = (systemId) => {
 
 .empty-text {
   font-size: 13px;
-}
-
-.info-box {
-  margin-top: var(--spacing-3);
-  padding: var(--spacing-2);
-  background-color: #dbeafe;
-  border: 1px solid #93c5fd;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  color: var(--color-gray-700);
 }
 
 .w-full {

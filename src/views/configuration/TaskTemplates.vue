@@ -15,7 +15,7 @@
           @click="activeTab = 'active'"
         >
           <i class="pi pi-check-circle"></i>
-          <span>Active Templates</span>
+          <span>Active</span>
           <span class="tab-count">{{ activeTemplatesCount }}</span>
         </button>
         <button
@@ -147,16 +147,6 @@
                 <span class="date-text">{{ formatDate(data.updatedAt) }}</span>
               </template>
             </Column>
-            <Column field="isActive" header="Active" style="min-width: 110px">
-              <template #body="{ data }">
-                <div class="status-toggle">
-                  <InputSwitch
-                    :modelValue="data.isActive !== false"
-                    @update:modelValue="toggleTemplateStatus(data)"
-                  />
-                </div>
-              </template>
-            </Column>
             <Column header="Actions" style="min-width: 140px" headerClass="actions-header">
               <template #body="{ data }">
                 <div class="action-buttons">
@@ -223,15 +213,6 @@
                   <div class="detail-row">
                     <span class="detail-label">SLA:</span>
                     <span class="detail-value">{{ template.sla }} days</span>
-                  </div>
-                  <div class="detail-row">
-                    <span class="detail-label">Active:</span>
-                    <div class="status-toggle" @click.stop>
-                      <InputSwitch
-                        :modelValue="template.isActive !== false"
-                        @update:modelValue="toggleTemplateStatus(template)"
-                      />
-                    </div>
                   </div>
                 </div>
                 <div class="card-footer">
@@ -467,7 +448,6 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
-import InputSwitch from 'primevue/inputswitch'
 import Dialog from 'primevue/dialog'
 import Toast from 'primevue/toast'
 import TaskTemplateDrawer from '../../components/drawers/TaskTemplateDrawer.vue'
@@ -744,17 +724,6 @@ const confirmPermanentDelete = () => {
   templateToDelete.value = null
 }
 
-const toggleTemplateStatus = (template) => {
-  template.isActive = template.isActive === false ? true : false
-
-  toast.add({
-    severity: 'success',
-    summary: 'Status Updated',
-    detail: `"${template.name}" is now ${template.isActive ? 'Active' : 'Inactive'}`,
-    life: 3000
-  })
-}
-
 const handleSaveTemplate = (templateData) => {
   toast.add({
     severity: 'success',
@@ -770,6 +739,9 @@ const handleSaveTemplate = (templateData) => {
 .page-container {
   max-width: 100%;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 100px);
 }
 
 .page-title-section {
@@ -917,7 +889,8 @@ const handleSaveTemplate = (templateData) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 340px);
+  flex: 1;
+  min-height: 0;
 }
 
 .table-container {
@@ -1408,35 +1381,6 @@ const handleSaveTemplate = (templateData) => {
 
 .detail-value {
   color: var(--color-gray-900);
-}
-
-/* Status Toggle */
-.status-toggle {
-  display: flex;
-  align-items: center;
-}
-
-.status-toggle :deep(.p-inputswitch) {
-  width: 2.5rem;
-  height: 1.25rem;
-}
-
-.status-toggle :deep(.p-inputswitch .p-inputswitch-slider) {
-  border-radius: 1rem;
-}
-
-.status-toggle :deep(.p-inputswitch .p-inputswitch-slider:before) {
-  width: 0.875rem;
-  height: 0.875rem;
-  margin-top: -0.4375rem;
-}
-
-.status-toggle :deep(.p-inputswitch.p-inputswitch-checked .p-inputswitch-slider) {
-  background-color: #22c55e;
-}
-
-.status-toggle :deep(.p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider) {
-  background-color: #16a34a;
 }
 
 /* Confirmation Dialog Styles */

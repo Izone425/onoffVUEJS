@@ -550,20 +550,17 @@ const populateSystemAccessData = (template) => {
         {
           id: `system-${Date.now()}-1`,
           name: 'Corporate Email (Outlook)',
-          description: 'Set up company email account with standard mailbox size and distribution lists',
-          pic: 'IT Admin'
+          description: 'Set up company email account with standard mailbox size and distribution lists'
         },
         {
           id: `system-${Date.now()}-2`,
           name: 'HRMS Portal Access',
-          description: 'Configure access to HR management system for leave, claims, and personal info updates',
-          pic: 'HR Admin'
+          description: 'Configure access to HR management system for leave, claims, and personal info updates'
         },
         {
           id: `system-${Date.now()}-3`,
           name: 'SharePoint & OneDrive',
-          description: 'Set up cloud storage and collaboration workspace access',
-          pic: 'IT Admin'
+          description: 'Set up cloud storage and collaboration workspace access'
         }
       ]
     } else {
@@ -571,14 +568,12 @@ const populateSystemAccessData = (template) => {
         {
           id: `system-${Date.now()}-1`,
           name: 'VPN Access',
-          description: 'Configure remote access VPN credentials',
-          pic: 'IT Admin'
+          description: 'Configure remote access VPN credentials'
         },
         {
           id: `system-${Date.now()}-2`,
           name: 'Project Management Tool',
-          description: 'Set up Jira/Trello access for project tracking',
-          pic: 'IT Admin'
+          description: 'Set up Jira/Trello access for project tracking'
         }
       ]
     }
@@ -597,21 +592,18 @@ const populateAssetData = (template) => {
           id: `asset-${Date.now()}-1`,
           name: 'Laptop Computer',
           description: 'Business laptop with Windows 11 Pro, Office 365, and standard security software pre-installed',
-          pic: 'IT Admin',
           handoverLetter: true
         },
         {
           id: `asset-${Date.now()}-2`,
           name: 'Employee ID Card',
           description: 'Photo ID card with building access and time attendance functionality',
-          pic: 'HR Admin',
           handoverLetter: false
         },
         {
           id: `asset-${Date.now()}-3`,
           name: 'Mobile Phone',
           description: 'Company mobile device with data plan for business communications',
-          pic: 'IT Admin',
           handoverLetter: true
         }
       ]
@@ -621,14 +613,12 @@ const populateAssetData = (template) => {
           id: `asset-${Date.now()}-1`,
           name: 'Access Card',
           description: 'Building and room access card',
-          pic: 'HR Admin',
           handoverLetter: false
         },
         {
           id: `asset-${Date.now()}-2`,
           name: 'Parking Pass',
           description: 'Company parking lot access permit',
-          pic: 'Facilities Manager',
           handoverLetter: false
         }
       ]
@@ -745,8 +735,7 @@ const populateChecklistData = (template) => {
     checklistItems.value = template.items.map((item, index) => ({
       id: `checklist-${Date.now()}-${index}`,
       title: item.text || item.title,
-      description: item.description || `Complete ${item.text || item.title} as part of the offboarding process`,
-      pic: item.owner || item.pic || 'IT Admin'
+      description: item.description || `Complete ${item.text || item.title} as part of the offboarding process`
     }))
   } else {
     // Provide realistic mock data
@@ -755,32 +744,27 @@ const populateChecklistData = (template) => {
         {
           id: `checklist-${Date.now()}-1`,
           title: 'Revoke Email Access',
-          description: 'Disable email account and redirect important messages to designated team member',
-          pic: 'IT Admin'
+          description: 'Disable email account and redirect important messages to designated team member'
         },
         {
           id: `checklist-${Date.now()}-2`,
           title: 'Collect Company Laptop',
-          description: 'Retrieve laptop, charger, and any accessories. Perform data backup if needed.',
-          pic: 'IT Admin'
+          description: 'Retrieve laptop, charger, and any accessories. Perform data backup if needed.'
         },
         {
           id: `checklist-${Date.now()}-3`,
           title: 'Collect Employee ID Card',
-          description: 'Retrieve access card and deactivate building access permissions',
-          pic: 'HR Admin'
+          description: 'Retrieve access card and deactivate building access permissions'
         },
         {
           id: `checklist-${Date.now()}-4`,
           title: 'Revoke System Access',
-          description: 'Remove access from all internal systems including VPN, GitHub, and cloud services',
-          pic: 'IT Admin'
+          description: 'Remove access from all internal systems including VPN, GitHub, and cloud services'
         },
         {
           id: `checklist-${Date.now()}-5`,
           title: 'Complete Asset Inventory Check',
-          description: 'Verify all company assets have been returned and update asset tracking system',
-          pic: 'IT Admin'
+          description: 'Verify all company assets have been returned and update asset tracking system'
         }
       ]
     } else {
@@ -788,14 +772,12 @@ const populateChecklistData = (template) => {
         {
           id: `checklist-${Date.now()}-1`,
           title: 'Complete Task 1',
-          description: 'First checklist item description',
-          pic: 'HR Admin'
+          description: 'First checklist item description'
         },
         {
           id: `checklist-${Date.now()}-2`,
           title: 'Complete Task 2',
-          description: 'Second checklist item description',
-          pic: 'Department Manager'
+          description: 'Second checklist item description'
         }
       ]
     }
