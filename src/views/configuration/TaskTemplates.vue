@@ -1,84 +1,108 @@
 <template>
-    <div class="page-container">
-      <div class="page-title-section">
-        <div>
-          <h1 class="text-h1">Task Templates</h1>
-          <p class="page-description">Configure reusable task templates for onboarding and offboarding workflows. Create templates with specific requirements, documents, and settings.</p>
-        </div>
+  <div class="page-container">
+    <div class="page-title-section">
+      <div>
+        <h1 class="text-h1">Task Templates</h1>
+        <p class="page-description">Configure reusable task templates for onboarding and offboarding workflows. Create templates with specific requirements, documents, and settings.</p>
       </div>
+    </div>
 
-      <div class="page-header-new">
-        <div class="search-section">
-          <span class="pi pi-search search-icon"></span>
-          <InputText
-            v-model="searchQuery"
-            placeholder="Search templates..."
-            class="search-input"
+    <!-- Tabs for Active/Archived -->
+    <div class="tabs-section">
+      <div class="tabs-container">
+        <button
+          :class="['tab-button', { active: activeTab === 'active' }]"
+          @click="activeTab = 'active'"
+        >
+          <i class="pi pi-check-circle"></i>
+          <span>Active Templates</span>
+          <span class="tab-count">{{ activeTemplatesCount }}</span>
+        </button>
+        <button
+          :class="['tab-button', { active: activeTab === 'archived' }]"
+          @click="activeTab = 'archived'"
+        >
+          <i class="pi pi-inbox"></i>
+          <span>Archived</span>
+          <span class="tab-count archived">{{ archivedTemplatesCount }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="page-header-new">
+      <div class="search-section">
+        <span class="pi pi-search search-icon"></span>
+        <InputText
+          v-model="searchQuery"
+          :placeholder="activeTab === 'active' ? 'Search active templates...' : 'Search archived templates...'"
+          class="search-input"
+        />
+      </div>
+      <div class="filter-section">
+        <Dropdown
+          v-model="selectedType"
+          :options="taskTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Types"
+          showClear
+          class="filter-dropdown"
+        >
+          <template #value="{ value, placeholder }">
+            <div v-if="value" class="type-dropdown-value">
+              <span :class="['pi', getTypeIcon(value)]"></span>
+              <span>{{ getTypeName(value) }}</span>
+            </div>
+            <span v-else>{{ placeholder }}</span>
+          </template>
+          <template #option="{ option }">
+            <div class="type-dropdown-option">
+              <span :class="['pi', getTypeIcon(option.value)]"></span>
+              <span>{{ option.label }}</span>
+            </div>
+          </template>
+        </Dropdown>
+        <Dropdown
+          v-model="selectedIndicator"
+          :options="indicators"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Categories"
+          showClear
+          class="filter-dropdown"
+        />
+        <div class="view-toggle">
+          <Button
+            icon="pi pi-list"
+            :severity="viewMode === 'list' ? 'primary' : 'secondary'"
+            :outlined="viewMode !== 'list'"
+            size="small"
+            @click="viewMode = 'list'"
+            title="List View"
+          />
+          <Button
+            icon="pi pi-th-large"
+            :severity="viewMode === 'card' ? 'primary' : 'secondary'"
+            :outlined="viewMode !== 'card'"
+            size="small"
+            @click="viewMode = 'card'"
+            title="Card View"
           />
         </div>
-        <div class="filter-section">
-          <Dropdown
-            v-model="selectedType"
-            :options="taskTypeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="All Types"
-            showClear
-            class="filter-dropdown"
-          >
-            <template #value="{ value, placeholder }">
-              <div v-if="value" class="type-dropdown-value">
-                <span :class="['pi', getTypeIcon(value)]"></span>
-                <span>{{ getTypeName(value) }}</span>
-              </div>
-              <span v-else>{{ placeholder }}</span>
-            </template>
-            <template #option="{ option }">
-              <div class="type-dropdown-option">
-                <span :class="['pi', getTypeIcon(option.value)]"></span>
-                <span>{{ option.label }}</span>
-              </div>
-            </template>
-          </Dropdown>
-          <Dropdown
-            v-model="selectedIndicator"
-            :options="indicators"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="All Categories"
-            showClear
-            class="filter-dropdown"
-          />
-          <div class="view-toggle">
-            <Button
-              icon="pi pi-list"
-              :severity="viewMode === 'list' ? 'primary' : 'secondary'"
-              :outlined="viewMode !== 'list'"
-              size="small"
-              @click="viewMode = 'list'"
-              title="List View"
-            />
-            <Button
-              icon="pi pi-th-large"
-              :severity="viewMode === 'card' ? 'primary' : 'secondary'"
-              :outlined="viewMode !== 'card'"
-              size="small"
-              @click="viewMode = 'card'"
-              title="Card View"
-            />
-          </div>
-          <Button label="Create Template" icon="pi pi-plus" @click="openDrawer(null)" />
-        </div>
+        <Button v-if="activeTab === 'active'" label="Create Template" icon="pi pi-plus" @click="openDrawer(null)" />
       </div>
+    </div>
 
-      <!-- Task Template Drawer -->
-      <TaskTemplateDrawer
-        v-model:visible="drawerVisible"
-        :editingTemplate="editingTemplate"
-        @save="handleSaveTemplate"
-      />
+    <!-- Task Template Drawer -->
+    <TaskTemplateDrawer
+      v-model:visible="drawerVisible"
+      :editingTemplate="editingTemplate"
+      @save="handleSaveTemplate"
+    />
 
-      <div class="content-card">
+    <div class="content-card">
+      <!-- Active Templates Tab -->
+      <template v-if="activeTab === 'active'">
         <!-- List View -->
         <div v-if="viewMode === 'list'" class="table-container">
           <DataTable
@@ -142,7 +166,7 @@
                     text
                     rounded
                     @click="handleView(data)"
-                    title="View"
+                    v-tooltip.top="'View'"
                     class="action-btn view"
                   />
                   <Button
@@ -151,18 +175,18 @@
                     text
                     rounded
                     @click="openDrawer(data)"
-                    title="Edit"
+                    v-tooltip.top="'Edit'"
                     class="action-btn edit"
                   />
                   <Button
-                    icon="pi pi-trash"
+                    icon="pi pi-inbox"
                     size="small"
                     text
                     rounded
-                    severity="danger"
-                    @click="handleDelete(data)"
-                    title="Delete"
-                    class="action-btn delete"
+                    severity="warning"
+                    @click="handleArchive(data)"
+                    v-tooltip.top="'Archive'"
+                    class="action-btn archive"
                   />
                 </div>
               </template>
@@ -179,9 +203,9 @@
                   <span :class="['pi', getTypeIcon(template.type)]"></span>
                 </div>
                 <div class="card-actions">
-                  <Button icon="pi pi-eye" size="small" text rounded @click="handleView(template)" title="View" />
-                  <Button icon="pi pi-pencil" size="small" text rounded @click="openDrawer(template)" title="Edit" />
-                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" @click="handleDelete(template)" title="Delete" />
+                  <Button icon="pi pi-eye" size="small" text rounded @click="handleView(template)" v-tooltip.top="'View'" />
+                  <Button icon="pi pi-pencil" size="small" text rounded @click="openDrawer(template)" v-tooltip.top="'Edit'" />
+                  <Button icon="pi pi-inbox" size="small" text rounded severity="warning" @click="handleArchive(template)" v-tooltip.top="'Archive'" />
                 </div>
               </div>
               <div class="card-body">
@@ -217,37 +241,265 @@
             </div>
           </div>
         </div>
+      </template>
 
-        <div class="table-footer">
-          <span class="result-count">Showing {{ sortedTemplates.length }} of {{ taskTemplates.length }} templates</span>
+      <!-- Archived Templates Tab -->
+      <template v-else>
+        <!-- Archived Empty State -->
+        <div v-if="sortedArchivedTemplates.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <h3 class="empty-title">No Archived Templates</h3>
+          <p class="empty-description">Templates you archive will appear here. You can restore them anytime.</p>
         </div>
+
+        <!-- Archived List View -->
+        <div v-else-if="viewMode === 'list'" class="table-container">
+          <DataTable
+            :value="sortedArchivedTemplates"
+            responsiveLayout="scroll"
+            stripedRows
+            scrollable
+            scrollHeight="flex"
+            :sortField="sortField"
+            :sortOrder="sortOrder"
+            @sort="onSort"
+          >
+            <Column field="name" header="Template Name" sortable style="min-width: 350px">
+              <template #body="{ data }">
+                <div class="template-name-cell archived">
+                  <div :class="['template-type-icon', data.type, 'archived']">
+                    <span :class="['pi', getTypeIcon(data.type)]"></span>
+                  </div>
+                  <div class="template-info">
+                    <div class="template-title archived">{{ data.name }}</div>
+                    <div class="template-description">{{ data.description || 'No description provided' }}</div>
+                  </div>
+                </div>
+              </template>
+            </Column>
+            <Column field="type" header="Type" sortable style="min-width: 160px">
+              <template #body="{ data }">
+                <span :class="['type-badge', data.type, 'archived']">
+                  {{ getTypeName(data.type) }}
+                </span>
+              </template>
+            </Column>
+            <Column field="indicator" header="Category" sortable style="min-width: 140px">
+              <template #body="{ data }">
+                <span :class="['category-badge', data.indicator, 'archived']">
+                  {{ data.indicator }}
+                </span>
+              </template>
+            </Column>
+            <Column field="archivedAt" header="Archived Date" sortable style="min-width: 140px">
+              <template #body="{ data }">
+                <span class="date-text">{{ formatDate(data.archivedAt) }}</span>
+              </template>
+            </Column>
+            <Column header="Actions" style="min-width: 160px" headerClass="actions-header">
+              <template #body="{ data }">
+                <div class="action-buttons">
+                  <Button
+                    icon="pi pi-eye"
+                    size="small"
+                    text
+                    rounded
+                    @click="handleView(data)"
+                    v-tooltip.top="'View'"
+                    class="action-btn view"
+                  />
+                  <Button
+                    icon="pi pi-replay"
+                    size="small"
+                    text
+                    rounded
+                    severity="success"
+                    @click="handleRestore(data)"
+                    v-tooltip.top="'Restore'"
+                    class="action-btn restore"
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    size="small"
+                    text
+                    rounded
+                    severity="danger"
+                    @click="handlePermanentDelete(data)"
+                    v-tooltip.top="'Delete Permanently'"
+                    class="action-btn delete"
+                  />
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+
+        <!-- Archived Card View -->
+        <div v-else class="card-grid-container">
+          <div class="card-grid">
+            <div v-for="template in sortedArchivedTemplates" :key="template.id" class="template-card archived">
+              <div class="card-header">
+                <div :class="['card-icon', template.type, 'archived']">
+                  <span :class="['pi', getTypeIcon(template.type)]"></span>
+                </div>
+                <div class="card-actions">
+                  <Button icon="pi pi-eye" size="small" text rounded @click="handleView(template)" v-tooltip.top="'View'" />
+                  <Button icon="pi pi-replay" size="small" text rounded severity="success" @click="handleRestore(template)" v-tooltip.top="'Restore'" />
+                  <Button icon="pi pi-trash" size="small" text rounded severity="danger" @click="handlePermanentDelete(template)" v-tooltip.top="'Delete Permanently'" />
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="archived-badge">
+                  <i class="pi pi-inbox"></i>
+                  <span>Archived</span>
+                </div>
+                <h3 class="card-title archived">{{ template.name }}</h3>
+                <p class="card-description">{{ template.description || 'No description provided' }}</p>
+                <div class="card-badges">
+                  <span :class="['type-badge', template.type, 'archived']">{{ getTypeName(template.type) }}</span>
+                  <span :class="['category-badge', template.indicator, 'archived']">{{ template.indicator }}</span>
+                </div>
+                <div class="card-details">
+                  <div class="detail-row">
+                    <span class="detail-label">Owner Role:</span>
+                    <span class="detail-value">{{ template.ownerRole }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">Archived:</span>
+                    <span class="detail-value">{{ formatDate(template.archivedAt) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div class="table-footer">
+        <span class="result-count">
+          <template v-if="activeTab === 'active'">
+            Showing {{ sortedTemplates.length }} of {{ activeTemplatesCount }} active templates
+          </template>
+          <template v-else>
+            Showing {{ sortedArchivedTemplates.length }} of {{ archivedTemplatesCount }} archived templates
+          </template>
+        </span>
       </div>
     </div>
-  </template>
+
+    <!-- Archive Confirmation Dialog -->
+    <Dialog
+      v-model:visible="archiveDialogVisible"
+      header="Archive Template"
+      :style="{ width: '420px' }"
+      :modal="true"
+    >
+      <div class="confirm-dialog-content">
+        <div class="confirm-icon warning">
+          <i class="pi pi-inbox"></i>
+        </div>
+        <div class="confirm-message">
+          <p>Are you sure you want to archive <strong>"{{ templateToArchive?.name }}"</strong>?</p>
+          <p class="confirm-hint">Archived templates can be restored later from the Archived tab.</p>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancel" severity="secondary" outlined @click="archiveDialogVisible = false" />
+        <Button label="Archive" icon="pi pi-inbox" severity="warning" @click="confirmArchive" />
+      </template>
+    </Dialog>
+
+    <!-- Restore Confirmation Dialog -->
+    <Dialog
+      v-model:visible="restoreDialogVisible"
+      header="Restore Template"
+      :style="{ width: '420px' }"
+      :modal="true"
+    >
+      <div class="confirm-dialog-content">
+        <div class="confirm-icon success">
+          <i class="pi pi-replay"></i>
+        </div>
+        <div class="confirm-message">
+          <p>Are you sure you want to restore <strong>"{{ templateToRestore?.name }}"</strong>?</p>
+          <p class="confirm-hint">The template will be moved back to active templates.</p>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancel" severity="secondary" outlined @click="restoreDialogVisible = false" />
+        <Button label="Restore" icon="pi pi-replay" severity="success" @click="confirmRestore" />
+      </template>
+    </Dialog>
+
+    <!-- Permanent Delete Confirmation Dialog -->
+    <Dialog
+      v-model:visible="deleteDialogVisible"
+      header="Delete Permanently"
+      :style="{ width: '420px' }"
+      :modal="true"
+    >
+      <div class="confirm-dialog-content">
+        <div class="confirm-icon danger">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <div class="confirm-message">
+          <p>Are you sure you want to permanently delete <strong>"{{ templateToDelete?.name }}"</strong>?</p>
+          <p class="confirm-hint warning">This action cannot be undone. The template will be permanently removed.</p>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancel" severity="secondary" outlined @click="deleteDialogVisible = false" />
+        <Button label="Delete Permanently" icon="pi pi-trash" severity="danger" @click="confirmPermanentDelete" />
+      </template>
+    </Dialog>
+
+    <Toast />
+  </div>
+</template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
-import StatusChip from '../../components/ui/StatusChip.vue'
+import Dialog from 'primevue/dialog'
+import Toast from 'primevue/toast'
 import TaskTemplateDrawer from '../../components/drawers/TaskTemplateDrawer.vue'
-import { taskTemplates, taskTypes } from '../../data/mockData'
+import { taskTemplates as initialTemplates } from '../../data/mockData'
 
 const toast = useToast()
+
+// Tab state
+const activeTab = ref('active')
+
+// Reactive templates data with archive support
+const templatesData = reactive({
+  active: initialTemplates.map(t => ({ ...t, isArchived: false })),
+  archived: []
+})
+
 const searchQuery = ref('')
 const selectedType = ref(null)
 const selectedIndicator = ref(null)
-const viewMode = ref('list') // 'list' or 'card'
+const viewMode = ref('list')
 const drawerVisible = ref(false)
 const editingTemplate = ref(null)
 const sortField = ref('name')
 const sortOrder = ref(1)
+
+// Dialog states
+const archiveDialogVisible = ref(false)
+const restoreDialogVisible = ref(false)
+const deleteDialogVisible = ref(false)
+const templateToArchive = ref(null)
+const templateToRestore = ref(null)
+const templateToDelete = ref(null)
 
 // Type icons mapping
 const typeIcons = {
@@ -289,10 +541,14 @@ const indicators = [
   { label: 'Offboarding', value: 'offboarding' }
 ]
 
-const filteredTemplates = computed(() => {
-  let filtered = [...taskTemplates]
+// Computed counts
+const activeTemplatesCount = computed(() => templatesData.active.length)
+const archivedTemplatesCount = computed(() => templatesData.archived.length)
 
-  // Filter by search query
+// Filter active templates
+const filteredTemplates = computed(() => {
+  let filtered = [...templatesData.active]
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(t =>
@@ -303,12 +559,35 @@ const filteredTemplates = computed(() => {
     )
   }
 
-  // Filter by type
   if (selectedType.value) {
     filtered = filtered.filter(t => t.type === selectedType.value)
   }
 
-  // Filter by indicator
+  if (selectedIndicator.value) {
+    filtered = filtered.filter(t => t.indicator === selectedIndicator.value)
+  }
+
+  return filtered
+})
+
+// Filter archived templates
+const filteredArchivedTemplates = computed(() => {
+  let filtered = [...templatesData.archived]
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(t =>
+      t.name.toLowerCase().includes(query) ||
+      (t.description && t.description.toLowerCase().includes(query)) ||
+      (typeLabels[t.type] && typeLabels[t.type].toLowerCase().includes(query)) ||
+      t.ownerRole.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedType.value) {
+    filtered = filtered.filter(t => t.type === selectedType.value)
+  }
+
   if (selectedIndicator.value) {
     filtered = filtered.filter(t => t.indicator === selectedIndicator.value)
   }
@@ -318,26 +597,31 @@ const filteredTemplates = computed(() => {
 
 const sortedTemplates = computed(() => {
   const templates = [...filteredTemplates.value]
+  return sortTemplates(templates)
+})
 
+const sortedArchivedTemplates = computed(() => {
+  const templates = [...filteredArchivedTemplates.value]
+  return sortTemplates(templates)
+})
+
+const sortTemplates = (templates) => {
   if (sortField.value) {
     templates.sort((a, b) => {
       let valueA = a[sortField.value]
       let valueB = b[sortField.value]
 
-      // Handle type sorting by label
       if (sortField.value === 'type') {
         valueA = typeLabels[valueA] || valueA
         valueB = typeLabels[valueB] || valueB
       }
 
-      // Handle date sorting
-      if (sortField.value === 'updatedAt') {
-        valueA = new Date(valueA).getTime()
-        valueB = new Date(valueB).getTime()
+      if (sortField.value === 'updatedAt' || sortField.value === 'archivedAt') {
+        valueA = new Date(valueA || 0).getTime()
+        valueB = new Date(valueB || 0).getTime()
         return sortOrder.value * (valueA - valueB)
       }
 
-      // String comparison
       if (typeof valueA === 'string' && typeof valueB === 'string') {
         return sortOrder.value * valueA.localeCompare(valueB, undefined, { sensitivity: 'base' })
       }
@@ -347,7 +631,7 @@ const sortedTemplates = computed(() => {
   }
 
   return templates
-})
+}
 
 const onSort = (event) => {
   sortField.value = event.sortField
@@ -378,22 +662,89 @@ const openDrawer = (template = null) => {
 }
 
 const handleView = (template) => {
-  // Open drawer in view mode
   editingTemplate.value = { ...template, viewMode: true }
   drawerVisible.value = true
 }
 
-const handleDelete = (template) => {
-  toast.add({
-    severity: 'warn',
-    summary: 'Delete Template',
-    detail: `Are you sure you want to delete "${template.name}"?`,
-    life: 5000
-  })
+// Archive functionality
+const handleArchive = (template) => {
+  templateToArchive.value = template
+  archiveDialogVisible.value = true
+}
+
+const confirmArchive = () => {
+  if (templateToArchive.value) {
+    const index = templatesData.active.findIndex(t => t.id === templateToArchive.value.id)
+    if (index !== -1) {
+      const [archivedTemplate] = templatesData.active.splice(index, 1)
+      archivedTemplate.isArchived = true
+      archivedTemplate.archivedAt = new Date().toISOString()
+      templatesData.archived.push(archivedTemplate)
+
+      toast.add({
+        severity: 'success',
+        summary: 'Template Archived',
+        detail: `"${templateToArchive.value.name}" has been archived`,
+        life: 3000
+      })
+    }
+  }
+  archiveDialogVisible.value = false
+  templateToArchive.value = null
+}
+
+// Restore functionality
+const handleRestore = (template) => {
+  templateToRestore.value = template
+  restoreDialogVisible.value = true
+}
+
+const confirmRestore = () => {
+  if (templateToRestore.value) {
+    const index = templatesData.archived.findIndex(t => t.id === templateToRestore.value.id)
+    if (index !== -1) {
+      const [restoredTemplate] = templatesData.archived.splice(index, 1)
+      restoredTemplate.isArchived = false
+      restoredTemplate.archivedAt = null
+      templatesData.active.push(restoredTemplate)
+
+      toast.add({
+        severity: 'success',
+        summary: 'Template Restored',
+        detail: `"${templateToRestore.value.name}" has been restored`,
+        life: 3000
+      })
+    }
+  }
+  restoreDialogVisible.value = false
+  templateToRestore.value = null
+}
+
+// Permanent delete functionality
+const handlePermanentDelete = (template) => {
+  templateToDelete.value = template
+  deleteDialogVisible.value = true
+}
+
+const confirmPermanentDelete = () => {
+  if (templateToDelete.value) {
+    const index = templatesData.archived.findIndex(t => t.id === templateToDelete.value.id)
+    if (index !== -1) {
+      templatesData.archived.splice(index, 1)
+
+      toast.add({
+        severity: 'success',
+        summary: 'Template Deleted',
+        detail: `"${templateToDelete.value.name}" has been permanently deleted`,
+        life: 3000
+      })
+    }
+  }
+  deleteDialogVisible.value = false
+  templateToDelete.value = null
 }
 
 const toggleTemplateStatus = (template) => {
-  // Toggle the isActive status
   template.isActive = template.isActive === false ? true : false
 
   toast.add({
@@ -422,7 +773,7 @@ const handleSaveTemplate = (templateData) => {
 }
 
 .page-title-section {
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .page-description {
@@ -430,6 +781,74 @@ const handleSaveTemplate = (templateData) => {
   margin-top: var(--spacing-1);
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* Tabs Section */
+.tabs-section {
+  margin-bottom: var(--spacing-3);
+}
+
+.tabs-container {
+  display: flex;
+  gap: var(--spacing-2);
+  background-color: var(--color-gray-100);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  width: fit-content;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-600);
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  color: var(--color-gray-900);
+  background-color: var(--color-gray-200);
+}
+
+.tab-button.active {
+  background-color: white;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-button i {
+  font-size: 14px;
+}
+
+.tab-count {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tab-count.archived {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-600);
+}
+
+.tab-button.active .tab-count {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.tab-button.active .tab-count.archived {
+  background-color: var(--color-gray-500);
+  color: white;
 }
 
 .page-header-new {
@@ -498,7 +917,7 @@ const handleSaveTemplate = (templateData) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 280px);
+  height: calc(100vh - 340px);
 }
 
 .table-container {
@@ -534,10 +953,55 @@ const handleSaveTemplate = (templateData) => {
   font-weight: 500;
 }
 
+/* Empty State */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  text-align: center;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background-color: var(--color-gray-100);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.empty-icon i {
+  font-size: 36px;
+  color: var(--color-gray-400);
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0 0 var(--spacing-2);
+}
+
+.empty-description {
+  font-size: 14px;
+  color: var(--color-gray-500);
+  margin: 0;
+  max-width: 360px;
+}
+
 .template-name-cell {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-3);
+}
+
+.template-name-cell.archived {
+  opacity: 0.7;
 }
 
 .template-type-icon {
@@ -549,6 +1013,10 @@ const handleSaveTemplate = (templateData) => {
   justify-content: center;
   flex-shrink: 0;
   background-color: var(--color-gray-100);
+}
+
+.template-type-icon.archived {
+  filter: grayscale(50%);
 }
 
 .template-type-icon .pi {
@@ -596,6 +1064,10 @@ const handleSaveTemplate = (templateData) => {
   line-height: 1.3;
 }
 
+.template-title.archived {
+  color: var(--color-gray-600);
+}
+
 .template-description {
   font-size: 12px;
   color: var(--color-gray-500);
@@ -614,6 +1086,11 @@ const handleSaveTemplate = (templateData) => {
   font-size: 12px;
   font-weight: 500;
   border: 1px solid;
+}
+
+.type-badge.archived {
+  filter: grayscale(40%);
+  opacity: 0.8;
 }
 
 .type-badge.general {
@@ -674,6 +1151,11 @@ const handleSaveTemplate = (templateData) => {
   text-transform: capitalize;
 }
 
+.category-badge.archived {
+  filter: grayscale(40%);
+  opacity: 0.8;
+}
+
 .category-badge.onboarding {
   background-color: #dbeafe;
   color: #1e40af;
@@ -684,27 +1166,6 @@ const handleSaveTemplate = (templateData) => {
   background-color: #fee2e2;
   color: #991b1b;
   border: 1px solid #fca5a5;
-}
-
-/* Status Badge Styles */
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
-  border: 1px solid #86efac;
-}
-
-.status-badge.inactive {
-  background-color: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
 }
 
 .date-text {
@@ -733,6 +1194,16 @@ const handleSaveTemplate = (templateData) => {
   background-color: #eff6ff !important;
 }
 
+.action-btn.archive:hover {
+  color: #d97706 !important;
+  background-color: #fffbeb !important;
+}
+
+.action-btn.restore:hover {
+  color: #059669 !important;
+  background-color: #ecfdf5 !important;
+}
+
 .action-btn.delete:hover {
   color: #dc2626 !important;
   background-color: #fef2f2 !important;
@@ -749,15 +1220,6 @@ const handleSaveTemplate = (templateData) => {
 .type-dropdown-value .pi,
 .type-dropdown-option .pi {
   font-size: 14px;
-  color: var(--color-gray-500);
-}
-
-.text-success {
-  color: var(--color-success);
-  font-weight: 500;
-}
-
-.text-muted {
   color: var(--color-gray-500);
 }
 
@@ -788,6 +1250,15 @@ const handleSaveTemplate = (templateData) => {
   box-shadow: var(--shadow-md);
 }
 
+.template-card.archived {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-200);
+}
+
+.template-card.archived:hover {
+  border-color: var(--color-gray-400);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -803,6 +1274,10 @@ const handleSaveTemplate = (templateData) => {
   align-items: center;
   justify-content: center;
   background-color: var(--color-gray-100);
+}
+
+.card-icon.archived {
+  filter: grayscale(50%);
 }
 
 .card-icon .pi {
@@ -852,12 +1327,34 @@ const handleSaveTemplate = (templateData) => {
   gap: var(--spacing-2);
 }
 
+.archived-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-600);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  width: fit-content;
+  margin-bottom: var(--spacing-1);
+}
+
+.archived-badge i {
+  font-size: 11px;
+}
+
 .card-title {
   font-size: 15px;
   font-weight: 600;
   color: var(--color-gray-900);
   margin: 0 0 6px 0;
   line-height: 1.3;
+}
+
+.card-title.archived {
+  color: var(--color-gray-600);
 }
 
 .card-description {
@@ -940,5 +1437,65 @@ const handleSaveTemplate = (templateData) => {
 
 .status-toggle :deep(.p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider) {
   background-color: #16a34a;
+}
+
+/* Confirmation Dialog Styles */
+.confirm-dialog-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-2) 0;
+}
+
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirm-icon.warning {
+  background-color: #fef3c7;
+}
+
+.confirm-icon.warning i {
+  font-size: 24px;
+  color: #d97706;
+}
+
+.confirm-icon.success {
+  background-color: #dcfce7;
+}
+
+.confirm-icon.success i {
+  font-size: 24px;
+  color: #16a34a;
+}
+
+.confirm-icon.danger {
+  background-color: #fee2e2;
+}
+
+.confirm-icon.danger i {
+  font-size: 24px;
+  color: #dc2626;
+}
+
+.confirm-message p {
+  margin: 0 0 var(--spacing-2);
+  color: var(--color-gray-700);
+  font-size: 14px;
+}
+
+.confirm-hint {
+  font-size: 13px !important;
+  color: var(--color-gray-500) !important;
+}
+
+.confirm-hint.warning {
+  color: #b91c1c !important;
 }
 </style>
