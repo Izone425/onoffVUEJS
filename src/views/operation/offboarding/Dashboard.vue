@@ -1429,6 +1429,75 @@
               <div v-if="asset.description" class="asset-description">
                 {{ asset.description }}
               </div>
+
+              <!-- Document Workflow Section (for IT/PIC) -->
+              <div v-if="isITPICUser" class="asset-document-section">
+                <div class="document-section-header">
+                  <i class="pi pi-file-edit"></i>
+                  <span>Document Workflow</span>
+                  <span
+                    class="workflow-help-icon"
+                    v-tooltip.top="'1. PIC uploads asset form → 2. Staff downloads & signs → 3. Staff uploads signed form → 4. PIC collects asset'"
+                  >
+                    <i class="pi pi-question-circle"></i>
+                  </span>
+                </div>
+
+                <!-- Asset Form (PIC Upload) -->
+                <div class="document-row">
+                  <div class="document-label">
+                    <i class="pi pi-upload"></i>
+                    <span>Asset Form</span>
+                  </div>
+                  <div v-if="asset.picUploadedForm" class="document-file">
+                    <span class="doc-filename">{{ asset.picUploadedForm.name }}</span>
+                    <div class="doc-actions">
+                      <Button icon="pi pi-eye" text size="small" severity="secondary" v-tooltip.top="'View'" @click="viewUploadedForm(asset.picUploadedForm)" />
+                      <Button icon="pi pi-download" text size="small" severity="secondary" v-tooltip.top="'Download'" @click="downloadForm(asset.picUploadedForm)" />
+                      <Button v-if="!asset.staffSignedForm" icon="pi pi-trash" text size="small" severity="danger" v-tooltip.top="'Remove'" @click="removeAssetPicForm(asset, index)" />
+                    </div>
+                  </div>
+                  <div v-else class="document-upload-btn">
+                    <Button
+                      label="Upload Form"
+                      icon="pi pi-upload"
+                      size="small"
+                      outlined
+                      @click="triggerAssetPicFormUpload(index)"
+                    />
+                    <input
+                      :ref="el => setAssetFormInputRef(el, index)"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      style="display: none"
+                      @change="handleAssetPicFormUpload($event, asset, index)"
+                    />
+                  </div>
+                </div>
+
+                <!-- Staff Uploaded Form -->
+                <div class="document-row">
+                  <div class="document-label">
+                    <i class="pi pi-user-edit"></i>
+                    <span>Staff Uploaded Form</span>
+                  </div>
+                  <div v-if="asset.staffSignedForm" class="document-file">
+                    <span class="doc-filename">{{ asset.staffSignedForm.name }}</span>
+                    <div class="doc-actions">
+                      <Button icon="pi pi-eye" text size="small" severity="secondary" v-tooltip.top="'View'" @click="viewUploadedForm(asset.staffSignedForm)" />
+                      <Button icon="pi pi-download" text size="small" severity="secondary" v-tooltip.top="'Download'" @click="downloadForm(asset.staffSignedForm)" />
+                    </div>
+                  </div>
+                  <div v-else-if="asset.picUploadedForm" class="document-waiting">
+                    <i class="pi pi-clock"></i>
+                    <span>Awaiting staff</span>
+                  </div>
+                  <div v-else class="document-na">
+                    <span>-</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="asset-details">
                 <div v-if="asset.collectedAt" class="asset-detail-item">
                   <i class="pi pi-calendar"></i>
@@ -1442,10 +1511,14 @@
                   <i class="pi pi-info-circle"></i>
                   <span>Condition: <strong>{{ asset.condition }}</strong></span>
                 </div>
+                <div v-if="asset.collectionNotes" class="asset-detail-item remark-item">
+                  <i class="pi pi-comment"></i>
+                  <span>Remark: <span class="remark-text">{{ asset.collectionNotes }}</span></span>
+                </div>
               </div>
 
-              <!-- IT/PIC Action Section - Only show for IT/PIC users when not collected -->
-              <div v-if="isITPICUser && !asset.collected" class="itpic-action-section collect-action">
+              <!-- IT/PIC Action Section - Only show for IT/PIC users when not collected AND staff has uploaded form -->
+              <div v-if="isITPICUser && !asset.collected && asset.staffSignedForm" class="itpic-action-section collect-action">
                 <div class="action-section-header">
                   <i class="pi pi-box"></i>
                   <span>Collect Asset from Staff</span>
@@ -1485,6 +1558,13 @@
                     />
                   </div>
                 </div>
+              </div>
+
+              <!-- IT/PIC waiting for staff to upload form -->
+              <div v-if="isITPICUser && !asset.collected && !asset.staffSignedForm" class="waiting-approval-notice">
+                <i class="pi pi-info-circle"></i>
+                <span v-if="!asset.picUploadedForm">Upload asset form to begin collection process</span>
+                <span v-else>Waiting for staff to download, sign and upload the form</span>
               </div>
 
               <!-- IT/PIC Undo Action - Show for IT/PIC users when already collected -->
@@ -1776,27 +1856,28 @@
         </div>
 
         <!-- Staff System Access Details Section (matching Onboarding layout) -->
-        <div v-if="selectedTaskForDetails.accessRevocationAcknowledgment && isStaffUser" class="access-details-section">
-          <div class="access-details-header">
+        <div v-if="selectedTaskForDetails.accessRevocationAcknowledgment && isStaffUser" class="system-access-section offboarding-staff">
+          <div class="system-access-header">
             <i class="pi pi-lock"></i>
-            <span>System Access Details</span>
+            <span>System Access Revocation</span>
             <Tag
               :value="`${selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess.length}/${selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess.length}`"
               severity="success"
             />
           </div>
-          <div class="access-details-list">
+          <div class="system-access-list">
             <div
               v-for="(access, index) in selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess"
               :key="index"
-              class="access-item-card access-revoked"
+              class="system-access-card"
+              :class="{ 'system-revoked': true }"
             >
-              <div class="access-card-header">
-                <div class="access-info">
-                  <span class="access-number">#{{ index + 1 }}</span>
-                  <span class="access-name">{{ access.name }}</span>
+              <div class="system-card-header">
+                <div class="system-info">
+                  <span class="system-number">#{{ index + 1 }}</span>
+                  <span class="system-name">{{ access.name }}</span>
                 </div>
-                <div class="access-status-badge">
+                <div class="system-status-badge">
                   <Tag
                     value="Revoked"
                     severity="danger"
@@ -1804,109 +1885,39 @@
                   />
                 </div>
               </div>
-              <div class="access-details-content">
-                <div class="access-detail-row">
-                  <div class="access-detail-item">
-                    <i class="pi pi-user"></i>
-                    <span>Account: <strong>{{ access.account }}</strong></span>
-                  </div>
-                  <div class="access-detail-item">
-                    <i class="pi pi-calendar"></i>
-                    <span>Revoked: {{ access.revokedDate }}</span>
-                  </div>
-                </div>
 
-                <!-- Revoked By Section -->
-                <div class="access-revokedby-section">
-                  <div class="revokedby-header">
-                    <i class="pi pi-user-minus"></i>
-                    <span>Revoked By</span>
-                  </div>
-                  <div class="revokedby-value">{{ access.revokedBy }}</div>
+              <div class="system-details">
+                <div class="system-detail-item">
+                  <i class="pi pi-user"></i>
+                  <span>PIC: <strong>{{ access.revokedBy }}</strong></span>
                 </div>
+                <div class="system-detail-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>Revoked: {{ access.revokedDate }}</span>
+                </div>
+              </div>
 
-                <!-- Acknowledgment Form Section -->
-                <div class="access-handover-section">
-                  <div class="handover-header">
-                    <i class="pi pi-file"></i>
-                    <span>Acknowledgment Form</span>
-                    <Tag
-                      :value="selectedTaskForDetails.accessRevocationAcknowledgment.submitted ? 'Signed' : 'Pending'"
-                      :severity="selectedTaskForDetails.accessRevocationAcknowledgment.submitted ? 'success' : 'warning'"
-                      class="handover-tag"
-                    />
-                  </div>
-                  <!-- Show PIC form -->
-                  <div class="handover-file">
-                    <div class="file-icon-wrapper purple">
-                      <i class="pi pi-file-pdf"></i>
-                    </div>
-                    <div class="file-info">
-                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm.name }}</span>
-                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.preparedAt }}</span>
-                    </div>
-                    <div class="file-actions">
-                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm)" />
-                      <Button icon="pi pi-download" severity="secondary" text size="small" @click="downloadForm(selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm)" />
-                    </div>
+              <!-- Access Credentials (Revoked) - Same layout as Onboarding -->
+              <div class="system-credentials revoked">
+                <div class="credentials-header">
+                  <i class="pi pi-key"></i>
+                  <span>Access Credentials</span>
+                </div>
+                <div class="credentials-content">
+                  <div class="credential-item">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value">{{ access.account }}</span>
                   </div>
                 </div>
+              </div>
 
-                <!-- Upload Signed Form Section - Only show on first access card to avoid duplication -->
-                <div v-if="index === 0" class="upload-signed-section">
-                  <div class="handover-header">
-                    <i class="pi pi-upload"></i>
-                    <span>Upload Signed Form</span>
-                  </div>
-                  <!-- Already submitted -->
-                  <div v-if="selectedTaskForDetails.accessRevocationAcknowledgment.submitted" class="handover-file submitted">
-                    <div class="file-icon-wrapper success">
-                      <i class="pi pi-check"></i>
-                    </div>
-                    <div class="file-info">
-                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.name }}</span>
-                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.uploadedAt }}</span>
-                    </div>
-                    <div class="file-actions">
-                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument)" />
-                    </div>
-                  </div>
-                  <!-- File selected but not submitted -->
-                  <div v-else-if="selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument" class="handover-file pending">
-                    <div class="file-icon-wrapper purple">
-                      <i class="pi pi-file-pdf"></i>
-                    </div>
-                    <div class="file-info">
-                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.name }}</span>
-                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.size }}</span>
-                    </div>
-                    <div class="file-actions">
-                      <Button icon="pi pi-times" severity="danger" text size="small" @click="removeSignedDocument(selectedTaskForDetails, 'access')" />
-                      <Button icon="pi pi-check" label="Submit" severity="success" size="small" @click="submitAccessRevocationAcknowledgment(selectedTaskForDetails)" />
-                    </div>
-                  </div>
-                  <!-- No file yet - Upload area -->
-                  <div v-else class="upload-area-inline" @click="triggerAccessFileUpload">
-                    <input
-                      ref="accessFileInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      style="display: none"
-                      @change="handleAccessSignedDocumentUpload($event, selectedTaskForDetails)"
-                    />
-                    <i class="pi pi-upload"></i>
-                    <span>Click to upload signed document</span>
-                  </div>
+              <!-- Remarks Section -->
+              <div v-if="access.remarks" class="system-remarks">
+                <div class="remarks-header">
+                  <i class="pi pi-comment"></i>
+                  <span>Remarks</span>
                 </div>
-
-                <!-- Remarks Section -->
-                <div v-if="access.remarks" class="access-remarks-section">
-                  <div class="remarks-header">
-                    <i class="pi pi-comment"></i>
-                    <span>Remarks</span>
-                  </div>
-                  <div class="remarks-content">{{ access.remarks }}</div>
-                </div>
+                <div class="remarks-content">{{ access.remarks }}</div>
               </div>
             </div>
           </div>
@@ -2158,6 +2169,8 @@ const selectedTaskForDetails = ref(null)
 // File input refs for signed document upload
 const assetFileInput = ref(null)
 const accessFileInput = ref(null)
+const picFormInput = ref(null)
+const assetFormInputRefs = ref({}) // Per-asset file input refs
 
 // Popover ref
 const companyFilterPopover = ref(null)
@@ -2204,13 +2217,15 @@ const allTasks = ref([
     { name: 'VPN Access', description: 'Disable remote network access', pic: 'IT Admin', grantedUser: 'zh-vpn-2022', grantedAt: '2022-03-20', grantedBy: 'David Kim', revoked: false },
     { name: 'Jira & Confluence', description: 'Remove from project boards and revoke documentation access', pic: 'IT Admin', grantedUser: 'zulkifli.hassan@timetec.com', grantedAt: '2022-03-18', grantedBy: 'David Kim', revoked: false }
   ] },
-  { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.', assetCollection: [
-    { name: 'Laptop (MacBook Pro 14")', serialNumber: 'MBP-2023-ZH-001', description: 'Company issued laptop with charger and accessories', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good' },
-    { name: 'Mobile Phone (iPhone 14)', serialNumber: 'IPH-2023-ZH-002', description: 'Company mobile phone with SIM card', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good' },
-    { name: 'Access Card', serialNumber: 'ACC-ZH-1234', description: 'Building access card and parking card', isCompulsory: true, collected: false },
-    { name: 'Company Credit Card', serialNumber: 'CC-CORP-5678', description: 'Corporate credit card for business expenses', isCompulsory: true, collected: false },
-    { name: 'External Hard Drive', serialNumber: 'HDD-2022-ZH-003', description: '1TB external hard drive for backup', isCompulsory: false, collected: true, collectedAt: '2025-09-12', collectedBy: 'David Kim', condition: 'Fair' },
-    { name: 'Office Keys', serialNumber: 'KEY-ZH-456', description: 'Office cabinet and drawer keys', isCompulsory: false, collected: false }
+  { id: 3, task: 'Collect Company Assets', assignee: 'Zulkifli Hassan', due: '2025-09-12', type: 'Asset', indicator: 'Offboarding', status: 'pending', assignedTo: 'IT/PIC', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Collect all company assets including laptop, phone, access card, and other equipment.',
+    // Each asset has its own document workflow: PIC uploads form → Staff downloads & signs → Staff uploads signed form → PIC reviews & collects
+    assetCollection: [
+    { name: 'Laptop (MacBook Pro 14")', serialNumber: 'MBP-2023-ZH-001', description: 'Company issued laptop with charger and accessories', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good', collectionNotes: 'Laptop returned in excellent condition with original charger and accessories', picUploadedForm: { name: 'Laptop_Return_Form.pdf', uploadedAt: '2025-09-10', uploadedBy: 'David Kim' }, staffSignedForm: { name: 'Laptop_Return_Form_Signed.pdf', uploadedAt: '2025-09-11', uploadedBy: 'Zulkifli Hassan' } },
+    { name: 'Mobile Phone (iPhone 14)', serialNumber: 'IPH-2023-ZH-002', description: 'Company mobile phone with SIM card', isCompulsory: true, collected: true, collectedAt: '2025-09-11', collectedBy: 'David Kim', condition: 'Good', collectionNotes: 'Phone and SIM card returned. Screen protector has minor scratches.', picUploadedForm: { name: 'Phone_Return_Form.pdf', uploadedAt: '2025-09-10', uploadedBy: 'David Kim' }, staffSignedForm: { name: 'Phone_Return_Form_Signed.pdf', uploadedAt: '2025-09-11', uploadedBy: 'Zulkifli Hassan' } },
+    { name: 'Access Card', serialNumber: 'ACC-ZH-1234', description: 'Building access card and parking card', isCompulsory: true, collected: false, picUploadedForm: { name: 'Access_Card_Return_Form.pdf', uploadedAt: '2025-09-10', uploadedBy: 'David Kim' }, staffSignedForm: null },
+    { name: 'Company Credit Card', serialNumber: 'CC-CORP-5678', description: 'Corporate credit card for business expenses', isCompulsory: true, collected: false, picUploadedForm: null, staffSignedForm: null },
+    { name: 'External Hard Drive', serialNumber: 'HDD-2022-ZH-003', description: '1TB external hard drive for backup', isCompulsory: false, collected: true, collectedAt: '2025-09-12', collectedBy: 'David Kim', condition: 'Fair', collectionNotes: 'Minor dent on casing, data wiped and verified', picUploadedForm: { name: 'HDD_Return_Form.pdf', uploadedAt: '2025-09-11', uploadedBy: 'David Kim' }, staffSignedForm: { name: 'HDD_Return_Form_Signed.pdf', uploadedAt: '2025-09-12', uploadedBy: 'Zulkifli Hassan' } },
+    { name: 'Office Keys', serialNumber: 'KEY-ZH-456', description: 'Office cabinet and drawer keys', isCompulsory: false, collected: false, picUploadedForm: null, staffSignedForm: null }
   ] },
   { id: 4, task: 'Final Pay Calculation', assignee: 'Siti Rahmah', due: '2025-09-18', type: 'General', indicator: 'Offboarding', status: 'pending', assignedTo: 'HR Admin', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Calculate final pay including prorated salary, unused leave, and any deductions.' },
   { id: 5, task: 'Knowledge Transfer', assignee: 'Zulkifli Hassan', due: '2025-09-08', type: 'Checklist', indicator: 'Offboarding', status: 'overdue', assignedTo: 'Manager', stage: 'Pre-Offboarding', company: 'timetec-cloud', description: 'Complete knowledge transfer documentation and handover to replacement.' },
@@ -3289,6 +3304,134 @@ const submitAccessRevocationAcknowledgment = (task) => {
   }, 1500)
 }
 
+// ==================== PIC Acknowledgment Form Workflow Functions ====================
+
+// Get workflow status for PIC acknowledgment form
+const getFormWorkflowStatus = (task) => {
+  if (!task.picAcknowledgmentForm) return 'Not Started'
+  if (task.picAcknowledgmentForm.picReviewed) return 'Completed'
+  if (task.picAcknowledgmentForm.staffSubmitted) return 'Pending Review'
+  if (task.picAcknowledgmentForm.uploadedForm) return 'Awaiting Staff'
+  return 'Upload Form'
+}
+
+// Get workflow severity for PIC acknowledgment form
+const getFormWorkflowSeverity = (task) => {
+  if (!task.picAcknowledgmentForm) return 'secondary'
+  if (task.picAcknowledgmentForm.picReviewed) return 'success'
+  if (task.picAcknowledgmentForm.staffSubmitted) return 'warning'
+  if (task.picAcknowledgmentForm.uploadedForm) return 'info'
+  return 'secondary'
+}
+
+// Trigger file upload for PIC acknowledgment form
+const triggerPicFormUpload = () => {
+  picFormInput.value?.click()
+}
+
+// Handle PIC acknowledgment form upload
+const handlePicFormUpload = (event, task) => {
+  const file = event.target.files[0]
+  if (file) {
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowedTypes.includes(file.type)) {
+      toast.add({
+        severity: 'error',
+        summary: 'Invalid File Type',
+        detail: 'Please upload a PDF, DOC, or DOCX file',
+        life: 3000
+      })
+      return
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.add({
+        severity: 'error',
+        summary: 'File Too Large',
+        detail: 'File size must be less than 10MB',
+        life: 3000
+      })
+      return
+    }
+
+    const currentDate = new Date().toISOString().split('T')[0]
+    const currentUserName = 'David Kim' // IT/PIC user
+
+    // Create uploaded form object
+    task.picAcknowledgmentForm.uploadedForm = {
+      name: file.name,
+      type: file.type,
+      size: formatFileSize(file.size),
+      uploadedAt: currentDate,
+      uploadedBy: currentUserName
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Form Uploaded',
+      detail: `${file.name} has been uploaded. Staff can now download and sign it.`,
+      life: 3000
+    })
+  }
+  // Reset input
+  event.target.value = ''
+}
+
+// Remove PIC uploaded form
+const removePicUploadedForm = (task) => {
+  if (task.picAcknowledgmentForm.staffSubmitted) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Cannot Remove',
+      detail: 'Cannot remove form after staff has submitted their signed document.',
+      life: 3000
+    })
+    return
+  }
+
+  task.picAcknowledgmentForm.uploadedForm = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Form Removed',
+    detail: 'Acknowledgment form has been removed.',
+    life: 2000
+  })
+}
+
+// Approve PIC signed document (mark as reviewed)
+const approvePicSignedDocument = (task) => {
+  const currentDate = new Date().toISOString().split('T')[0]
+  const currentUserName = 'David Kim' // IT/PIC user
+
+  task.picAcknowledgmentForm.picReviewed = true
+  task.picAcknowledgmentForm.picReviewedAt = currentDate
+  task.picAcknowledgmentForm.picReviewedBy = currentUserName
+
+  toast.add({
+    severity: 'success',
+    summary: 'Document Approved',
+    detail: 'Signed document has been approved. You can now proceed with asset collection.',
+    life: 3000
+  })
+}
+
+// Reject PIC signed document (request re-sign)
+const rejectPicSignedDocument = (task) => {
+  // Reset staff submission
+  task.picAcknowledgmentForm.staffSignedDocument = null
+  task.picAcknowledgmentForm.staffSubmitted = false
+
+  toast.add({
+    severity: 'warn',
+    summary: 'Document Rejected',
+    detail: 'Staff has been notified to re-sign and upload the document again.',
+    life: 3000
+  })
+}
+
 // Asset condition options for collection form
 const assetConditionOptions = ref([
   { label: 'Excellent', value: 'Excellent' },
@@ -3377,6 +3520,53 @@ const undoAssetCollection = (asset, index) => {
     severity: 'info',
     summary: 'Collection Undone',
     detail: `Collection of ${asset.name} has been undone`,
+    life: 3000
+  })
+}
+
+// Per-Asset Document Workflow Functions
+const setAssetFormInputRef = (el, index) => {
+  if (el) {
+    assetFormInputRefs.value[index] = el
+  }
+}
+
+const triggerAssetPicFormUpload = (index) => {
+  const inputEl = assetFormInputRefs.value[index]
+  if (inputEl) {
+    inputEl.click()
+  }
+}
+
+const handleAssetPicFormUpload = (event, asset, index) => {
+  const file = event.target.files[0]
+  if (file) {
+    const currentUserName = userStore.currentRole?.name === 'IT/PIC' ? 'David Kim' : 'IT Admin'
+
+    asset.picUploadedForm = {
+      name: file.name,
+      uploadedAt: new Date().toISOString().split('T')[0],
+      uploadedBy: currentUserName
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Form Uploaded',
+      detail: `Acknowledgment form for ${asset.name} has been uploaded`,
+      life: 3000
+    })
+  }
+  // Reset the input
+  event.target.value = ''
+}
+
+const removeAssetPicForm = (asset, index) => {
+  asset.picUploadedForm = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Form Removed',
+    detail: `Acknowledgment form for ${asset.name} has been removed`,
     life: 3000
   })
 }
@@ -5460,6 +5650,24 @@ const handleAssignWorkflow = () => {
   font-size: 12px;
 }
 
+.asset-detail-item.remark-item {
+  align-items: flex-start;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.asset-detail-item.remark-item i {
+  color: #6366f1;
+  margin-top: 2px;
+}
+
+.remark-text {
+  color: #475569;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .collection-confirmed {
   display: flex;
   align-items: center;
@@ -5639,6 +5847,99 @@ const handleAssignWorkflow = () => {
   background: rgba(255, 255, 255, 0.6);
   padding: 0.125rem 0.375rem;
   border-radius: var(--radius-sm);
+}
+
+/* System Credentials Section (matching Onboarding layout) */
+.system-credentials {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+}
+
+.system-credentials.revoked {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+}
+
+.system-credentials .credentials-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success-700);
+  margin-bottom: 0.5rem;
+}
+
+.system-credentials.revoked .credentials-header {
+  color: #b91c1c;
+}
+
+.system-credentials .credentials-header i {
+  color: var(--color-success-600);
+}
+
+.system-credentials.revoked .credentials-header i {
+  color: #dc2626;
+}
+
+.system-credentials .credentials-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.system-credentials .credential-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.system-credentials .credential-label {
+  color: var(--color-gray-500);
+}
+
+.system-credentials .credential-value {
+  font-weight: 500;
+  color: var(--color-gray-800);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+/* System Remarks Section */
+.system-remarks {
+  margin-top: 0.75rem;
+  padding: 0.625rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+}
+
+.system-remarks .remarks-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.system-remarks .remarks-header i {
+  font-size: 12px;
+}
+
+.system-remarks .remarks-content {
+  font-size: 12px;
+  color: #78350f;
+  line-height: 1.4;
 }
 
 /* Checklist Section Styles */
@@ -7242,5 +7543,506 @@ const handleAssignWorkflow = () => {
   padding: 0.375rem 0.5rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-divider);
+}
+
+/* PIC Acknowledgment Form Section Styles */
+.pic-acknowledgment-section {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pic-acknowledgment-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1d4ed8;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #93c5fd;
+}
+
+.pic-acknowledgment-header i {
+  color: #3b82f6;
+}
+
+.pic-acknowledgment-header span {
+  flex: 1;
+}
+
+/* Workflow Progress Indicator */
+.workflow-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.workflow-step .step-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  flex-shrink: 0;
+}
+
+.workflow-step.completed .step-indicator {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+}
+
+.workflow-step .step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.workflow-step .step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.workflow-step.completed .step-label {
+  color: #16a34a;
+}
+
+.workflow-step .step-sublabel {
+  font-size: 10px;
+  color: var(--color-gray-500);
+}
+
+.workflow-connector {
+  width: 40px;
+  height: 2px;
+  background: var(--color-gray-300);
+  margin: 0 0.5rem;
+  flex-shrink: 0;
+}
+
+.workflow-connector.active {
+  background: #22c55e;
+}
+
+/* Section Subheader */
+.section-subheader {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.section-subheader i {
+  color: #3b82f6;
+  font-size: 14px;
+}
+
+/* Form Upload Section */
+.form-upload-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.upload-form-area .upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px dashed #94a3b8;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-form-area .upload-dropzone:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.upload-form-area .upload-dropzone i {
+  font-size: 32px;
+  color: #94a3b8;
+}
+
+.upload-form-area .upload-dropzone:hover i {
+  color: #3b82f6;
+}
+
+.upload-text-main {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.upload-text-sub {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.upload-hint-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border: 1px solid #fde047;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: #a16207;
+  line-height: 1.4;
+}
+
+.upload-hint-text i {
+  color: #ca8a04;
+  font-size: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* Uploaded Form Display */
+.uploaded-form-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.form-file-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+}
+
+.form-file-card.submitted {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.form-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.form-status-badge.success {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #6ee7b7;
+  color: #047857;
+}
+
+.form-status-badge i {
+  font-size: 14px;
+}
+
+/* Staff Signed Section */
+.staff-signed-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.waiting-staff-upload {
+  padding: 0.75rem;
+}
+
+.waiting-indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+}
+
+.waiting-indicator > i {
+  color: #d97706;
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.waiting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.waiting-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.waiting-subtitle {
+  font-size: 12px;
+  color: #a16207;
+  line-height: 1.4;
+}
+
+/* Staff Submitted Display */
+.staff-submitted-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* PIC Review Actions */
+.pic-review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.review-prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.4;
+}
+
+.review-prompt i {
+  color: #3b82f6;
+  font-size: 14px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.review-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Review Completed */
+.review-completed {
+  padding-top: 0.5rem;
+}
+
+.review-success-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #047857;
+}
+
+.review-success-badge i {
+  color: #16a34a;
+  font-size: 16px;
+}
+
+/* Per-Asset Document Workflow Styles */
+.asset-document-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+}
+
+.document-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.document-section-header i {
+  color: #6366f1;
+  font-size: 14px;
+}
+
+.workflow-help-icon {
+  margin-left: auto;
+  cursor: help;
+}
+
+.workflow-help-icon i {
+  color: #94a3b8;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.workflow-help-icon:hover i {
+  color: #6366f1;
+}
+
+.document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.document-row:last-child {
+  border-bottom: none;
+}
+
+.document-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  min-width: 100px;
+}
+
+.document-label i {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.document-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.doc-filename {
+  font-size: 12px;
+  color: #334155;
+  background-color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.doc-actions :deep(.p-button) {
+  width: 28px;
+  height: 28px;
+}
+
+.document-upload-btn :deep(.p-button) {
+  font-size: 11px;
+}
+
+.document-waiting {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.document-waiting i {
+  font-size: 12px;
+}
+
+.document-na {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.document-approved {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.document-approved i {
+  font-size: 14px;
+}
+
+.document-review-btns {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.document-review-btns :deep(.p-button) {
+  width: 28px;
+  height: 28px;
+}
+
+.waiting-approval-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #92400e;
+}
+
+.waiting-approval-notice i {
+  color: #f59e0b;
+  font-size: 14px;
 }
 </style>
