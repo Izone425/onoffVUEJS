@@ -1512,6 +1512,406 @@
           </div>
         </div>
 
+        <!-- Checklist Section (for Checklist type tasks) -->
+        <div v-if="selectedTaskForDetails.checklistItems && selectedTaskForDetails.checklistItems.length > 0" class="checklist-section" :class="{ 'staff-mode': isStaffUser }">
+          <div class="checklist-header">
+            <i class="pi pi-check-square"></i>
+            <span>{{ isStaffUser ? 'Complete Checklist' : 'Checklist Items' }}</span>
+            <Tag
+              :value="`${getCompletedChecklistCount(selectedTaskForDetails)}/${selectedTaskForDetails.checklistItems.length}`"
+              :severity="getCompletedChecklistCount(selectedTaskForDetails) === selectedTaskForDetails.checklistItems.length ? 'success' : 'warning'"
+            />
+          </div>
+
+          <!-- Staff User Instructions -->
+          <div v-if="isStaffUser" class="staff-checklist-instructions">
+            <i class="pi pi-info-circle"></i>
+            <span>Mark each item as completed once you have finished the task. All items must be completed before submitting.</span>
+          </div>
+
+          <div class="checklist-items-list">
+            <div
+              v-for="(item, index) in selectedTaskForDetails.checklistItems"
+              :key="item.id"
+              class="checklist-item-card"
+              :class="{ 'item-completed': item.completed }"
+            >
+              <div class="checklist-item-header">
+                <div class="item-number-badge">#{{ index + 1 }}</div>
+                <div class="item-title-section">
+                  <span class="item-title">{{ item.title }}</span>
+                  <Tag
+                    v-if="item.completed"
+                    value="Completed"
+                    severity="success"
+                    class="completion-tag"
+                  />
+                  <Tag
+                    v-else
+                    value="Pending"
+                    severity="warning"
+                    class="completion-tag"
+                  />
+                </div>
+              </div>
+
+              <div class="checklist-item-body">
+                <div class="item-description">
+                  <p>{{ item.description }}</p>
+                </div>
+
+                <div class="item-pic-info">
+                  <i class="pi pi-user"></i>
+                  <span>Person In Charge: <strong>{{ item.pic }}</strong></span>
+                </div>
+
+                <!-- Staff Remark Input Section -->
+                <div v-if="isStaffUser" class="staff-remark-section">
+                  <label class="remark-label">Remark / Notes</label>
+                  <Textarea
+                    v-model="item.remark"
+                    placeholder="Add your remark or notes here (optional)..."
+                    rows="2"
+                    class="remark-textarea"
+                    :disabled="item.completed"
+                  />
+                </div>
+
+                <!-- Non-Staff: Show remark if exists -->
+                <div v-if="!isStaffUser && item.remark" class="remark-display">
+                  <div class="remark-display-label">
+                    <i class="pi pi-comment"></i>
+                    <span>Staff Remark:</span>
+                  </div>
+                  <div class="remark-display-content">{{ item.remark }}</div>
+                </div>
+
+                <!-- Completion Info (if completed) -->
+                <div v-if="item.completed" class="item-completion-info">
+                  <div class="completion-details">
+                    <i class="pi pi-check-circle"></i>
+                    <span>Completed by <strong>{{ item.completedBy }}</strong> on {{ item.completedAt }}</span>
+                  </div>
+                </div>
+
+                <!-- Staff Action Section (only for Staff users on incomplete items) -->
+                <div v-if="isStaffUser && !item.completed" class="staff-checklist-action">
+                  <Button
+                    label="Mark as Completed"
+                    icon="pi pi-check"
+                    severity="success"
+                    size="small"
+                    @click="markChecklistItemCompleted(item, index)"
+                  />
+                </div>
+
+                <!-- Staff Undo Action (for Staff users on completed items) -->
+                <div v-if="isStaffUser && item.completed" class="staff-checklist-undo">
+                  <Button
+                    label="Undo Completion"
+                    icon="pi pi-undo"
+                    severity="secondary"
+                    size="small"
+                    outlined
+                    @click="undoChecklistItemCompletion(item, index)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Staff Submit Actions -->
+          <div v-if="isStaffUser" class="staff-checklist-actions">
+            <div class="checklist-progress-info">
+              <span class="progress-count">{{ getCompletedChecklistCount(selectedTaskForDetails) }} of {{ selectedTaskForDetails.checklistItems.length }} completed</span>
+              <span v-if="getCompletedChecklistCount(selectedTaskForDetails) < selectedTaskForDetails.checklistItems.length" class="remaining-warning">
+                <i class="pi pi-exclamation-triangle"></i>
+                {{ selectedTaskForDetails.checklistItems.length - getCompletedChecklistCount(selectedTaskForDetails) }} item(s) remaining
+              </span>
+            </div>
+            <Button
+              icon="pi pi-check"
+              label="Submit Checklist"
+              :disabled="getCompletedChecklistCount(selectedTaskForDetails) < selectedTaskForDetails.checklistItems.length"
+              @click="submitChecklist(selectedTaskForDetails)"
+            />
+          </div>
+        </div>
+
+        <!-- Staff Asset Details Section (matching Onboarding layout) -->
+        <div v-if="selectedTaskForDetails.assetAcknowledgment && isStaffUser" class="asset-details-section">
+          <div class="asset-details-header">
+            <i class="pi pi-box"></i>
+            <span>Asset Details</span>
+            <Tag
+              :value="`${selectedTaskForDetails.assetAcknowledgment.assets.length}/${selectedTaskForDetails.assetAcknowledgment.assets.length}`"
+              severity="success"
+            />
+          </div>
+          <div class="asset-details-list">
+            <div
+              v-for="(asset, index) in selectedTaskForDetails.assetAcknowledgment.assets"
+              :key="index"
+              class="asset-item-card asset-returned"
+            >
+              <div class="asset-card-header">
+                <div class="asset-info">
+                  <span class="asset-number">#{{ index + 1 }}</span>
+                  <span class="asset-name">{{ asset.name }}</span>
+                </div>
+                <div class="asset-status-badge">
+                  <Tag
+                    :value="asset.condition"
+                    :severity="asset.condition === 'Good' ? 'success' : asset.condition === 'Fair' ? 'warning' : 'danger'"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div class="asset-details-content">
+                <div class="asset-detail-row">
+                  <div class="asset-detail-item">
+                    <i class="pi pi-user"></i>
+                    <span>PIC: <strong>{{ asset.verifiedBy }}</strong></span>
+                  </div>
+                  <div class="asset-detail-item">
+                    <i class="pi pi-calendar"></i>
+                    <span>Returned: {{ asset.returnedDate }}</span>
+                  </div>
+                </div>
+
+                <!-- Serial Number Section -->
+                <div class="asset-serial-section">
+                  <div class="serial-header">
+                    <i class="pi pi-tag"></i>
+                    <span>Serial Number</span>
+                  </div>
+                  <div class="serial-value">{{ asset.serialNumber }}</div>
+                </div>
+
+                <!-- Acknowledgment Form Section -->
+                <div class="asset-handover-section">
+                  <div class="handover-header">
+                    <i class="pi pi-file"></i>
+                    <span>Acknowledgment Form</span>
+                    <Tag
+                      :value="selectedTaskForDetails.assetAcknowledgment.submitted ? 'Signed' : 'Pending'"
+                      :severity="selectedTaskForDetails.assetAcknowledgment.submitted ? 'success' : 'warning'"
+                      class="handover-tag"
+                    />
+                  </div>
+                  <!-- Show PIC form -->
+                  <div class="handover-file">
+                    <div class="file-icon-wrapper orange">
+                      <i class="pi pi-file-pdf"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.assetAcknowledgment.uploadedForm.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.assetAcknowledgment.preparedAt }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.assetAcknowledgment.uploadedForm)" />
+                      <Button icon="pi pi-download" severity="secondary" text size="small" @click="downloadForm(selectedTaskForDetails.assetAcknowledgment.uploadedForm)" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Upload Signed Form Section - Only show on first asset card to avoid duplication -->
+                <div v-if="index === 0" class="upload-signed-section">
+                  <div class="handover-header">
+                    <i class="pi pi-upload"></i>
+                    <span>Upload Signed Form</span>
+                  </div>
+                  <!-- Already submitted -->
+                  <div v-if="selectedTaskForDetails.assetAcknowledgment.submitted" class="handover-file submitted">
+                    <div class="file-icon-wrapper success">
+                      <i class="pi pi-check"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.assetAcknowledgment.signedDocument.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.assetAcknowledgment.signedDocument.uploadedAt }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.assetAcknowledgment.signedDocument)" />
+                    </div>
+                  </div>
+                  <!-- File selected but not submitted -->
+                  <div v-else-if="selectedTaskForDetails.assetAcknowledgment.signedDocument" class="handover-file pending">
+                    <div class="file-icon-wrapper orange">
+                      <i class="pi pi-file-pdf"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.assetAcknowledgment.signedDocument.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.assetAcknowledgment.signedDocument.size }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-times" severity="danger" text size="small" @click="removeSignedDocument(selectedTaskForDetails, 'asset')" />
+                      <Button icon="pi pi-check" label="Submit" severity="success" size="small" @click="submitAssetAcknowledgment(selectedTaskForDetails)" />
+                    </div>
+                  </div>
+                  <!-- No file yet - Upload area -->
+                  <div v-else class="upload-area-inline" @click="triggerAssetFileUpload">
+                    <input
+                      ref="assetFileInput"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      style="display: none"
+                      @change="handleAssetSignedDocumentUpload($event, selectedTaskForDetails)"
+                    />
+                    <i class="pi pi-upload"></i>
+                    <span>Click to upload signed document</span>
+                  </div>
+                </div>
+
+                <!-- Remarks Section -->
+                <div v-if="asset.remarks" class="asset-remarks-section">
+                  <div class="remarks-header">
+                    <i class="pi pi-comment"></i>
+                    <span>Remarks</span>
+                  </div>
+                  <div class="remarks-content">{{ asset.remarks }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff System Access Details Section (matching Onboarding layout) -->
+        <div v-if="selectedTaskForDetails.accessRevocationAcknowledgment && isStaffUser" class="access-details-section">
+          <div class="access-details-header">
+            <i class="pi pi-lock"></i>
+            <span>System Access Details</span>
+            <Tag
+              :value="`${selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess.length}/${selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess.length}`"
+              severity="success"
+            />
+          </div>
+          <div class="access-details-list">
+            <div
+              v-for="(access, index) in selectedTaskForDetails.accessRevocationAcknowledgment.systemAccess"
+              :key="index"
+              class="access-item-card access-revoked"
+            >
+              <div class="access-card-header">
+                <div class="access-info">
+                  <span class="access-number">#{{ index + 1 }}</span>
+                  <span class="access-name">{{ access.name }}</span>
+                </div>
+                <div class="access-status-badge">
+                  <Tag
+                    value="Revoked"
+                    severity="danger"
+                    class="status-tag"
+                  />
+                </div>
+              </div>
+              <div class="access-details-content">
+                <div class="access-detail-row">
+                  <div class="access-detail-item">
+                    <i class="pi pi-user"></i>
+                    <span>Account: <strong>{{ access.account }}</strong></span>
+                  </div>
+                  <div class="access-detail-item">
+                    <i class="pi pi-calendar"></i>
+                    <span>Revoked: {{ access.revokedDate }}</span>
+                  </div>
+                </div>
+
+                <!-- Revoked By Section -->
+                <div class="access-revokedby-section">
+                  <div class="revokedby-header">
+                    <i class="pi pi-user-minus"></i>
+                    <span>Revoked By</span>
+                  </div>
+                  <div class="revokedby-value">{{ access.revokedBy }}</div>
+                </div>
+
+                <!-- Acknowledgment Form Section -->
+                <div class="access-handover-section">
+                  <div class="handover-header">
+                    <i class="pi pi-file"></i>
+                    <span>Acknowledgment Form</span>
+                    <Tag
+                      :value="selectedTaskForDetails.accessRevocationAcknowledgment.submitted ? 'Signed' : 'Pending'"
+                      :severity="selectedTaskForDetails.accessRevocationAcknowledgment.submitted ? 'success' : 'warning'"
+                      class="handover-tag"
+                    />
+                  </div>
+                  <!-- Show PIC form -->
+                  <div class="handover-file">
+                    <div class="file-icon-wrapper purple">
+                      <i class="pi pi-file-pdf"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.preparedAt }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm)" />
+                      <Button icon="pi pi-download" severity="secondary" text size="small" @click="downloadForm(selectedTaskForDetails.accessRevocationAcknowledgment.uploadedForm)" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Upload Signed Form Section - Only show on first access card to avoid duplication -->
+                <div v-if="index === 0" class="upload-signed-section">
+                  <div class="handover-header">
+                    <i class="pi pi-upload"></i>
+                    <span>Upload Signed Form</span>
+                  </div>
+                  <!-- Already submitted -->
+                  <div v-if="selectedTaskForDetails.accessRevocationAcknowledgment.submitted" class="handover-file submitted">
+                    <div class="file-icon-wrapper success">
+                      <i class="pi pi-check"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.uploadedAt }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-eye" severity="secondary" text size="small" @click="viewUploadedForm(selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument)" />
+                    </div>
+                  </div>
+                  <!-- File selected but not submitted -->
+                  <div v-else-if="selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument" class="handover-file pending">
+                    <div class="file-icon-wrapper purple">
+                      <i class="pi pi-file-pdf"></i>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.name }}</span>
+                      <span class="file-meta">{{ selectedTaskForDetails.accessRevocationAcknowledgment.signedDocument.size }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <Button icon="pi pi-times" severity="danger" text size="small" @click="removeSignedDocument(selectedTaskForDetails, 'access')" />
+                      <Button icon="pi pi-check" label="Submit" severity="success" size="small" @click="submitAccessRevocationAcknowledgment(selectedTaskForDetails)" />
+                    </div>
+                  </div>
+                  <!-- No file yet - Upload area -->
+                  <div v-else class="upload-area-inline" @click="triggerAccessFileUpload">
+                    <input
+                      ref="accessFileInput"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      style="display: none"
+                      @change="handleAccessSignedDocumentUpload($event, selectedTaskForDetails)"
+                    />
+                    <i class="pi pi-upload"></i>
+                    <span>Click to upload signed document</span>
+                  </div>
+                </div>
+
+                <!-- Remarks Section -->
+                <div v-if="access.remarks" class="access-remarks-section">
+                  <div class="remarks-header">
+                    <i class="pi pi-comment"></i>
+                    <span>Remarks</span>
+                  </div>
+                  <div class="remarks-content">{{ access.remarks }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="task-actions-section" v-if="!isStaffUser">
           <Button
@@ -1754,6 +2154,11 @@ const isAddTaskDrawerOpen = ref(false)
 const isEmployeeTasksDrawerOpen = ref(false)
 const selectedTaskForDetails = ref(null)
 
+// E-Sign confirmation checkboxes
+// File input refs for signed document upload
+const assetFileInput = ref(null)
+const accessFileInput = ref(null)
+
 // Popover ref
 const companyFilterPopover = ref(null)
 
@@ -1852,12 +2257,12 @@ const allTasks = ref([
   ] },
 
   // Last Day-Offboarding Stage Tasks
-  { id: 105, task: 'Return Company Assets', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Checklist', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Return all company-issued assets to IT department on your last working day.', checklistItems: [
-    { name: 'Laptop & Charger', completed: false, notes: 'MacBook Pro 14" with power adapter' },
-    { name: 'Mobile Phone', completed: false, notes: 'iPhone 13 with SIM card' },
-    { name: 'Access Card', completed: false, notes: 'Building and parking access card' },
-    { name: 'Office Keys', completed: false, notes: 'Cabinet and drawer keys' },
-    { name: 'Company Credit Card', completed: false, notes: 'Corporate card (if applicable)' }
+  { id: 105, task: 'Return Company Assets', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Checklist', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Return all company-issued assets to IT department on your last working day.', checklistItems: [
+    { id: 'checklist-105-1', title: 'Return Laptop & Charger', description: 'Return the MacBook Pro 14" laptop along with the power adapter and any accessories. Ensure all personal data has been backed up and removed.', pic: 'IT Department', completed: true, completedAt: '2025-10-14', completedBy: 'Aina Zulkifli', remark: 'Laptop returned in good condition with original charger. All data wiped as confirmed by IT.' },
+    { id: 'checklist-105-2', title: 'Return Mobile Phone', description: 'Return the company iPhone 13 with SIM card. Make sure to sign out of all accounts and remove personal data.', pic: 'IT Department', completed: true, completedAt: '2025-10-14', completedBy: 'Aina Zulkifli', remark: 'Phone factory reset completed. SIM card returned separately.' },
+    { id: 'checklist-105-3', title: 'Return Access Card', description: 'Return building access card and parking access card to the Security team at the main lobby.', pic: 'Security Team', completed: false, remark: '' },
+    { id: 'checklist-105-4', title: 'Return Office Keys', description: 'Return all office keys including cabinet keys, drawer keys, and any room access keys to Facilities.', pic: 'Facilities Manager', completed: false, remark: '' },
+    { id: 'checklist-105-5', title: 'Return Company Credit Card', description: 'Return corporate credit card to Finance department. Ensure all pending expenses have been submitted for reimbursement.', pic: 'Finance Department', completed: false, remark: '' }
   ] },
   { id: 106, task: 'Complete Clearance Form', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Information', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Complete the departmental clearance form with all required signatures.', filledInfo: [
     { label: 'Department Head Clearance', value: '', required: true },
@@ -1871,6 +2276,56 @@ const allTasks = ref([
     { name: 'Final Timesheet', isCompulsory: true, completed: false }
   ] },
   { id: 109, task: 'Update Out-of-Office & Email Forwarding', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'General', indicator: 'Offboarding', status: 'not-started', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Set up out-of-office reply and configure email forwarding to your replacement or manager.' },
+
+  // Staff Asset Return Acknowledgment (download form, sign offline, upload signed form)
+  { id: 116, task: 'Asset Return Acknowledgment', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'Asset', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Download the Asset Return Acknowledgment form, sign it, and upload the signed document back to the system.', assetAcknowledgment: {
+    formTitle: 'Asset Return Acknowledgment Form',
+    formDescription: 'Download this form, sign it (physical or digital signature), and upload the signed copy back to the system.',
+    preparedBy: 'David Kim',
+    preparedAt: '2025-10-14',
+    department: 'IT Department',
+    uploadedForm: {
+      name: 'Asset_Return_Acknowledgment_AZ_2025.pdf',
+      type: 'pdf',
+      size: '342 KB',
+      uploadedAt: '2025-10-14'
+    },
+    assets: [
+      { name: 'MacBook Pro 14" (2023)', serialNumber: 'MBP-2023-AZ-001', condition: 'Good', returnedDate: '2025-10-14', verifiedBy: 'David Kim' },
+      { name: 'iPhone 13 Pro', serialNumber: 'IPH-2023-AZ-002', condition: 'Good', returnedDate: '2025-10-14', verifiedBy: 'David Kim' },
+      { name: 'Dell 27" Monitor', serialNumber: 'MON-2022-AZ-003', condition: 'Good', returnedDate: '2025-10-14', verifiedBy: 'David Kim' },
+      { name: 'Wireless Keyboard & Mouse', serialNumber: 'ACC-2022-AZ-004', condition: 'Fair', returnedDate: '2025-10-14', verifiedBy: 'David Kim' },
+      { name: 'Building Access Card', serialNumber: 'ACC-AZ-5678', condition: 'Good', returnedDate: '2025-10-15', verifiedBy: 'Security Team' }
+    ],
+    signedDocument: null, // { name, type, size, uploadedAt, uploadedBy }
+    submitted: false
+  } },
+
+  // Staff System Access Revocation Acknowledgment (download form, sign offline, upload signed form)
+  { id: 117, task: 'System Access Revocation Acknowledgment', assignee: 'Aina Zulkifli', due: '2025-10-15', type: 'System/Access', indicator: 'Offboarding', status: 'in-progress', assignedTo: 'Staff', stage: 'Last Day-Offboarding', company: 'timetec-cloud', description: 'Download the System Access Revocation form, sign it, and upload the signed document back to the system.', accessRevocationAcknowledgment: {
+    formTitle: 'System Access Revocation Acknowledgment',
+    formDescription: 'Download this form, sign it (physical or digital signature), and upload the signed copy back to the system.',
+    preparedBy: 'David Kim',
+    preparedAt: '2025-10-14',
+    department: 'IT Department',
+    uploadedForm: {
+      name: 'System_Access_Revocation_AZ_2025.pdf',
+      type: 'pdf',
+      size: '287 KB',
+      uploadedAt: '2025-10-14'
+    },
+    systemAccess: [
+      { name: 'Corporate Email (Outlook)', account: 'aina.zulkifli@timetec.com', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' },
+      { name: 'Active Directory', account: 'aina.zulkifli', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' },
+      { name: 'HRMS Portal', account: 'aina.zulkifli', revokedDate: '2025-10-15', revokedBy: 'Sarah Lee', status: 'Revoked' },
+      { name: 'SharePoint & OneDrive', account: 'aina.zulkifli@timetec.com', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' },
+      { name: 'Slack Workspace', account: 'aina.zulkifli', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' },
+      { name: 'Jira & Confluence', account: 'aina.zulkifli@timetec.com', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' },
+      { name: 'VPN Access', account: 'az-vpn-2023', revokedDate: '2025-10-15', revokedBy: 'David Kim', status: 'Revoked' }
+    ],
+    signedDocument: null, // { name, type, size, uploadedAt, uploadedBy }
+    submitted: false
+  } },
 
   // Post-Offboarding Stage Tasks
   { id: 110, task: 'Collect Final Payslip', assignee: 'Aina Zulkifli', due: '2025-10-25', type: 'Document', indicator: 'Offboarding', status: 'pending', assignedTo: 'Staff', stage: 'Post-Offboarding', company: 'timetec-cloud', description: 'Collect your final payslip and payment confirmation from HR department.', requiredItems: [
@@ -2595,6 +3050,243 @@ const getRevokedSystemsCount = (task) => {
 const getCollectedAssetsCount = (task) => {
   if (!task.assetCollection || task.assetCollection.length === 0) return 0
   return task.assetCollection.filter(asset => asset.collected).length
+}
+
+// Get completed checklist items count
+const getCompletedChecklistCount = (task) => {
+  if (!task.checklistItems || task.checklistItems.length === 0) return 0
+  return task.checklistItems.filter(item => item.completed).length
+}
+
+// Staff Action - Mark checklist item as completed
+const markChecklistItemCompleted = (item, index) => {
+  const currentUserName = currentUserRole.value === 'Staff (End User)' ? 'Aina Zulkifli' : 'Staff'
+
+  item.completed = true
+  item.completedAt = new Date().toISOString().split('T')[0]
+  item.completedBy = currentUserName
+
+  toast.add({
+    severity: 'success',
+    summary: 'Item Completed',
+    detail: `"${item.title}" has been marked as completed`,
+    life: 3000
+  })
+}
+
+// Staff Action - Undo checklist item completion
+const undoChecklistItemCompletion = (item, index) => {
+  item.completed = false
+  item.completedAt = null
+  item.completedBy = null
+
+  toast.add({
+    severity: 'info',
+    summary: 'Completion Undone',
+    detail: `"${item.title}" has been reverted to pending`,
+    life: 3000
+  })
+}
+
+// Staff Action - Submit completed checklist
+const submitChecklist = (task) => {
+  const completedCount = getCompletedChecklistCount(task)
+  const totalCount = task.checklistItems.length
+
+  if (completedCount < totalCount) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Incomplete Checklist',
+      detail: `Please complete all ${totalCount - completedCount} remaining item(s) before submitting.`,
+      life: 4000
+    })
+    return
+  }
+
+  // Mark task as completed
+  task.status = 'completed'
+
+  toast.add({
+    severity: 'success',
+    summary: 'Checklist Submitted',
+    detail: 'All checklist items have been completed successfully!',
+    life: 3000
+  })
+
+  // Close the drawer after a short delay
+  setTimeout(() => {
+    isTaskDetailsDrawerOpen.value = false
+  }, 1500)
+}
+
+// View uploaded form (opens in new tab or modal)
+const viewUploadedForm = (file) => {
+  // In real implementation, this would open the actual PDF file
+  toast.add({
+    severity: 'info',
+    summary: 'Opening Document',
+    detail: `Opening ${file.name}...`,
+    life: 2000
+  })
+}
+
+// Download form handler
+const downloadForm = (form) => {
+  toast.add({
+    severity: 'info',
+    summary: 'Download Started',
+    detail: `Downloading ${form.name}...`,
+    life: 3000
+  })
+  // In real implementation, this would trigger actual file download
+  console.log('Downloading form:', form.name)
+}
+
+// Trigger file upload for Asset acknowledgment
+const triggerAssetFileUpload = () => {
+  assetFileInput.value?.click()
+}
+
+// Trigger file upload for Access acknowledgment
+const triggerAccessFileUpload = () => {
+  accessFileInput.value?.click()
+}
+
+// Handle Asset signed document upload
+const handleAssetSignedDocumentUpload = (event, task) => {
+  const file = event.target.files[0]
+  if (file) {
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.add({
+        severity: 'error',
+        summary: 'File Too Large',
+        detail: 'File size must be less than 10MB',
+        life: 3000
+      })
+      return
+    }
+
+    // Create signed document object
+    task.assetAcknowledgment.signedDocument = {
+      name: file.name,
+      type: file.type,
+      size: formatFileSize(file.size),
+      uploadedAt: null,
+      uploadedBy: null
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'File Selected',
+      detail: `${file.name} is ready to submit`,
+      life: 3000
+    })
+  }
+  // Reset input
+  event.target.value = ''
+}
+
+// Handle Access signed document upload
+const handleAccessSignedDocumentUpload = (event, task) => {
+  const file = event.target.files[0]
+  if (file) {
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.add({
+        severity: 'error',
+        summary: 'File Too Large',
+        detail: 'File size must be less than 10MB',
+        life: 3000
+      })
+      return
+    }
+
+    // Create signed document object
+    task.accessRevocationAcknowledgment.signedDocument = {
+      name: file.name,
+      type: file.type,
+      size: formatFileSize(file.size),
+      uploadedAt: null,
+      uploadedBy: null
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'File Selected',
+      detail: `${file.name} is ready to submit`,
+      life: 3000
+    })
+  }
+  // Reset input
+  event.target.value = ''
+}
+
+// Remove signed document before submission
+const removeSignedDocument = (task, type) => {
+  if (type === 'asset') {
+    task.assetAcknowledgment.signedDocument = null
+  } else if (type === 'access') {
+    task.accessRevocationAcknowledgment.signedDocument = null
+  }
+  toast.add({
+    severity: 'info',
+    summary: 'File Removed',
+    detail: 'Signed document has been removed',
+    life: 2000
+  })
+}
+
+// Submit Asset Acknowledgment with signed document
+const submitAssetAcknowledgment = (task) => {
+  const currentUserName = currentUserRole.value === 'Staff (End User)' ? 'Aina Zulkifli' : 'Staff'
+  const currentDate = new Date().toISOString().split('T')[0]
+
+  // Update signed document with submission details
+  task.assetAcknowledgment.signedDocument.uploadedAt = currentDate
+  task.assetAcknowledgment.signedDocument.uploadedBy = currentUserName
+  task.assetAcknowledgment.submitted = true
+
+  // Mark task as completed
+  task.status = 'completed'
+
+  toast.add({
+    severity: 'success',
+    summary: 'Document Submitted',
+    detail: 'Asset Return Acknowledgment has been submitted successfully!',
+    life: 3000
+  })
+
+  // Close drawer after delay
+  setTimeout(() => {
+    isTaskDetailsDrawerOpen.value = false
+  }, 1500)
+}
+
+// Submit Access Revocation Acknowledgment with signed document
+const submitAccessRevocationAcknowledgment = (task) => {
+  const currentUserName = currentUserRole.value === 'Staff (End User)' ? 'Aina Zulkifli' : 'Staff'
+  const currentDate = new Date().toISOString().split('T')[0]
+
+  // Update signed document with submission details
+  task.accessRevocationAcknowledgment.signedDocument.uploadedAt = currentDate
+  task.accessRevocationAcknowledgment.signedDocument.uploadedBy = currentUserName
+  task.accessRevocationAcknowledgment.submitted = true
+
+  // Mark task as completed
+  task.status = 'completed'
+
+  toast.add({
+    severity: 'success',
+    summary: 'Document Submitted',
+    detail: 'System Access Revocation Acknowledgment has been submitted successfully!',
+    life: 3000
+  })
+
+  // Close drawer after delay
+  setTimeout(() => {
+    isTaskDetailsDrawerOpen.value = false
+  }, 1500)
 }
 
 // Asset condition options for collection form
@@ -4947,5 +5639,1608 @@ const handleAssignWorkflow = () => {
   background: rgba(255, 255, 255, 0.6);
   padding: 0.125rem 0.375rem;
   border-radius: var(--radius-sm);
+}
+
+/* Checklist Section Styles */
+.checklist-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.checklist-section.staff-mode {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #6ee7b7;
+}
+
+.checklist-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.checklist-section.staff-mode .checklist-header {
+  color: #047857;
+  border-bottom-color: #6ee7b7;
+}
+
+.checklist-header i {
+  color: #64748b;
+}
+
+.checklist-section.staff-mode .checklist-header i {
+  color: #10b981;
+}
+
+.checklist-header span {
+  flex: 1;
+}
+
+.staff-checklist-instructions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: 0.75rem;
+}
+
+.staff-checklist-instructions i {
+  color: #d97706;
+  font-size: 14px;
+}
+
+.checklist-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checklist-item-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.checklist-item-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.checklist-item-card.item-completed {
+  border-left-color: #10b981;
+}
+
+.checklist-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.item-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  background: #64748b;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.checklist-item-card.item-completed .item-number-badge {
+  background: #10b981;
+}
+
+.item-title-section {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  line-height: 1.4;
+}
+
+.completion-tag {
+  flex-shrink: 0;
+}
+
+.checklist-item-body {
+  padding: 0.75rem;
+}
+
+.item-description {
+  margin-bottom: 0.75rem;
+}
+
+.item-description p {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.item-pic-info {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: var(--color-gray-500);
+  padding: 0.5rem 0.625rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.75rem;
+}
+
+.item-pic-info i {
+  font-size: 12px;
+}
+
+.item-pic-info strong {
+  color: var(--color-gray-800);
+}
+
+.item-completion-info {
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.completion-details {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: var(--color-success-700);
+}
+
+.completion-details i {
+  color: var(--color-success-600);
+  font-size: 14px;
+}
+
+.completion-details strong {
+  color: var(--color-success-800);
+}
+
+.staff-checklist-action {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+}
+
+.staff-checklist-undo {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Staff Checklist Submit Actions */
+.staff-checklist-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid #6ee7b7;
+  border-radius: var(--radius-md);
+  margin-top: 0.75rem;
+}
+
+.checklist-progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.progress-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.remaining-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  color: #d97706;
+}
+
+.remaining-warning i {
+  font-size: 12px;
+}
+
+.staff-checklist-actions :deep(.p-button) {
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+/* Staff Remark Section */
+.staff-remark-section {
+  margin: 0.75rem 0;
+}
+
+.remark-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.remark-textarea {
+  width: 100%;
+}
+
+.remark-textarea :deep(.p-textarea) {
+  width: 100%;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.remark-textarea :deep(.p-textarea:disabled) {
+  background: var(--color-gray-50);
+  opacity: 0.8;
+}
+
+/* Remark Display for Non-Staff */
+.remark-display {
+  margin: 0.75rem 0;
+  padding: 0.625rem;
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border: 1px solid #fde047;
+  border-radius: var(--radius-md);
+}
+
+.remark-display-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a16207;
+  margin-bottom: 0.375rem;
+}
+
+.remark-display-label i {
+  font-size: 12px;
+}
+
+.remark-display-content {
+  font-size: 12px;
+  color: var(--color-gray-700);
+  line-height: 1.5;
+  padding: 0.375rem 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-sm);
+}
+
+/* E-Sign Acknowledgment Section Styles */
+.esign-acknowledgment-section {
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.esign-acknowledgment-section.asset-type {
+  background: linear-gradient(135deg, #fef7ed 0%, #fed7aa 100%);
+  border: 1px solid #fdba74;
+}
+
+.esign-acknowledgment-section.access-type {
+  background: linear-gradient(135deg, #faf5ff 0%, #e9d5ff 100%);
+  border: 1px solid #c4b5fd;
+}
+
+.esign-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.esign-acknowledgment-section.asset-type .esign-header {
+  color: #c2410c;
+}
+
+.esign-acknowledgment-section.access-type .esign-header {
+  color: #7c3aed;
+}
+
+.esign-header span {
+  flex: 1;
+}
+
+.esign-form-info {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.esign-form-info .form-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: 0.375rem;
+}
+
+.esign-form-info .form-description {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+  margin-bottom: 0.625rem;
+}
+
+.esign-form-info .form-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.esign-form-info .form-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.esign-form-info .form-meta strong {
+  color: var(--color-gray-700);
+}
+
+.esign-uploaded-form {
+  margin-bottom: 0.75rem;
+}
+
+.uploaded-form-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.uploaded-form-header i {
+  color: #dc2626;
+}
+
+.uploaded-form-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+}
+
+.form-file-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-file-icon i {
+  color: #dc2626;
+  font-size: 18px;
+}
+
+.form-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.form-file-info .file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.form-file-info .file-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.esign-items-list {
+  margin-bottom: 0.75rem;
+}
+
+.items-list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.items-list-header span {
+  flex: 1;
+}
+
+.items-table {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.items-table .table-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-gray-50);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.items-table.access-table .table-header {
+  grid-template-columns: 1.5fr 2fr 0.8fr 1fr;
+}
+
+.items-table .table-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 12px;
+  color: var(--color-gray-700);
+  border-bottom: 1px solid var(--color-divider);
+  align-items: center;
+}
+
+.items-table.access-table .table-row {
+  grid-template-columns: 1.5fr 2fr 0.8fr 1fr;
+}
+
+.items-table .table-row:last-child {
+  border-bottom: none;
+}
+
+.items-table .col-name {
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.items-table .col-serial,
+.items-table .col-account {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--color-gray-600);
+}
+
+.esign-action-section {
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.esign-action-section.already-signed {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.esign-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.esign-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.esign-notice i {
+  color: #d97706;
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.esign-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.esign-checkbox label {
+  font-size: 12px;
+  color: var(--color-gray-700);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.esign-pending :deep(.p-button) {
+  align-self: flex-end;
+}
+
+.esign-completed {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.esign-success-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.esign-success-icon i {
+  color: #16a34a;
+  font-size: 24px;
+}
+
+.esign-success-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.esign-success-info .success-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.esign-success-info .success-detail {
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.esign-success-info .success-detail strong {
+  color: var(--color-gray-800);
+}
+
+/* Simple Asset/Access Acknowledgment Section Styles */
+.asset-acknowledgment-section,
+.access-acknowledgment-section {
+  margin-bottom: 1rem;
+}
+
+.section-header-simple {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+  margin-bottom: 0.625rem;
+}
+
+.section-header-simple i {
+  color: var(--color-gray-500);
+}
+
+.section-header-simple span {
+  flex: 1;
+}
+
+/* Asset/Access Items List */
+.asset-items-list,
+.access-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.asset-item-card,
+.access-item-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.asset-item-header,
+.access-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.asset-number,
+.access-number {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.asset-name,
+.access-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.asset-item-details,
+.access-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-left: 1.75rem;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+}
+
+.detail-label {
+  color: var(--color-gray-500);
+  min-width: 100px;
+}
+
+.detail-value {
+  color: var(--color-gray-700);
+  font-weight: 500;
+}
+
+/* Acknowledgment Form Section */
+.acknowledgment-form-section {
+  margin-top: 0.75rem;
+}
+
+.form-item-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.form-meta {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--color-gray-400);
+  font-style: italic;
+}
+
+.form-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+}
+
+.form-file-row.submitted {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.form-file-row.pending {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.file-icon-small {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-icon-small i {
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.file-icon-small.success {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.file-icon-small.success i {
+  color: #16a34a;
+}
+
+.file-info-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.file-info-small .file-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-info-small .file-size {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.file-actions-small {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Upload Row */
+.upload-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border: 1px dashed var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.upload-row:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #3b82f6;
+}
+
+.upload-row i {
+  font-size: 16px;
+}
+
+/* Keep old styles for backwards compatibility */
+.acknowledgment-form-info {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.acknowledgment-form-info .form-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: 0.375rem;
+}
+
+.acknowledgment-form-info .form-description {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+  margin-bottom: 0.625rem;
+}
+
+.acknowledgment-form-info .form-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.acknowledgment-form-info .form-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.acknowledgment-form-info .form-meta strong {
+  color: var(--color-gray-700);
+}
+
+/* Workflow Steps */
+.workflow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  transition: all 0.2s ease;
+}
+
+.workflow-step.completed {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  flex-shrink: 0;
+}
+
+.workflow-step.completed .step-number {
+  background: #22c55e;
+  color: white;
+}
+
+.step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.step-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.step-description {
+  font-size: 10px;
+  color: var(--color-gray-500);
+}
+
+.step-check {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+/* Document Download Section */
+.document-download-section {
+  margin-bottom: 0.75rem;
+}
+
+.document-download-section .section-header,
+.document-upload-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.document-download-section .section-header i {
+  color: #3b82f6;
+}
+
+.document-upload-section .section-header i {
+  color: #22c55e;
+}
+
+.download-form-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+}
+
+.download-form-card .form-actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+/* Acknowledgment Items List */
+.acknowledgment-items-list {
+  margin-bottom: 0.75rem;
+}
+
+.acknowledgment-items-list .items-list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.acknowledgment-items-list .items-list-header span {
+  flex: 1;
+}
+
+/* Document Upload Section */
+.document-upload-section {
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.document-upload-section.submitted {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upload-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.upload-notice i {
+  color: #3b82f6;
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: var(--color-gray-50);
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.upload-dropzone i {
+  font-size: 32px;
+  color: var(--color-gray-400);
+}
+
+.upload-dropzone:hover i {
+  color: #3b82f6;
+}
+
+.upload-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.upload-hint {
+  font-size: 11px;
+  color: var(--color-gray-400);
+}
+
+.uploaded-signed-preview {
+  margin-bottom: 0;
+}
+
+.uploaded-file-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+}
+
+.submit-btn {
+  align-self: flex-end;
+}
+
+/* Submission Completed State */
+.submission-completed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.submission-completed .success-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submission-completed .success-icon i {
+  color: #16a34a;
+  font-size: 24px;
+}
+
+.submission-completed .success-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.submission-completed .success-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.submission-completed .success-detail {
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.submission-completed .success-detail strong {
+  color: var(--color-gray-800);
+}
+
+.submitted-file-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+  width: 100%;
+}
+
+/* Asset Details Section (Staff Offboarding - matching Onboarding layout) */
+.asset-details-section {
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  border: 1px solid #fdba74;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.asset-details-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #c2410c;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fdba74;
+}
+
+.asset-details-header i {
+  color: #ea580c;
+}
+
+.asset-details-header span {
+  flex: 1;
+}
+
+.asset-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.asset-item-card.asset-returned {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-left: 3px solid #22c55e;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.asset-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.asset-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.asset-number {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.asset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.asset-status-badge .status-tag {
+  font-size: 11px;
+}
+
+.asset-details-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.asset-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.asset-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.asset-detail-item i {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+.asset-detail-item strong {
+  color: var(--color-gray-800);
+}
+
+.asset-serial-section {
+  padding: 0.625rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.serial-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.375rem;
+}
+
+.serial-header i {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+.serial-value {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  background: var(--color-bg);
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+}
+
+.asset-handover-section,
+.access-handover-section {
+  padding: 0.625rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.handover-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.handover-header i {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+.handover-header span {
+  flex: 1;
+}
+
+.handover-tag {
+  font-size: 10px;
+}
+
+.handover-file {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.625rem;
+}
+
+.handover-file.submitted {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.handover-file.pending {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fcd34d;
+}
+
+.file-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-icon-wrapper.orange {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+}
+
+.file-icon-wrapper.orange i {
+  color: #c2410c;
+  font-size: 14px;
+}
+
+.file-icon-wrapper.purple {
+  background: linear-gradient(135deg, #e9d5ff 0%, #c4b5fd 100%);
+}
+
+.file-icon-wrapper.purple i {
+  color: #7c3aed;
+  font-size: 14px;
+}
+
+.file-icon-wrapper.success {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.file-icon-wrapper.success i {
+  color: #16a34a;
+  font-size: 14px;
+}
+
+.upload-signed-section {
+  padding: 0.625rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.upload-area-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.upload-area-inline:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #3b82f6;
+}
+
+.upload-area-inline i {
+  font-size: 16px;
+}
+
+.asset-remarks-section,
+.access-remarks-section {
+  padding: 0.625rem;
+  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  border: 1px solid #fde047;
+  border-radius: var(--radius-md);
+}
+
+.remarks-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a16207;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.375rem;
+}
+
+.remarks-header i {
+  font-size: 12px;
+}
+
+.remarks-content {
+  font-size: 12px;
+  color: var(--color-gray-700);
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+/* System Access Details Section (Staff Offboarding - matching Onboarding layout) */
+.access-details-section {
+  background: linear-gradient(135deg, #faf5ff 0%, #e9d5ff 100%);
+  border: 1px solid #c4b5fd;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.access-details-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: #7c3aed;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #c4b5fd;
+}
+
+.access-details-header i {
+  color: #8b5cf6;
+}
+
+.access-details-header span {
+  flex: 1;
+}
+
+.access-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.access-item-card.access-revoked {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-left: 3px solid #dc2626;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.access-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.access-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.access-number {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.access-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.access-status-badge .status-tag {
+  font-size: 11px;
+}
+
+.access-details-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.access-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.access-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.access-detail-item i {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+.access-detail-item strong {
+  color: var(--color-gray-800);
+}
+
+.access-revokedby-section {
+  padding: 0.625rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.revokedby-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.375rem;
+}
+
+.revokedby-header i {
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.revokedby-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  background: var(--color-bg);
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
 }
 </style>
